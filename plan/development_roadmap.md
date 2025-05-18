@@ -10,6 +10,30 @@ This document outlines the incremental development process for the AI Territory 
 4. **Maintain Compatibility**: Ensure the game continues to work in the browser at all times
 5. **Stage-Based Approach**: Follow the staged implementation plan with clear stopping points
 
+## Technology Stack
+
+### Frontend
+- HTML5 Canvas for 2D rendering
+- JavaScript/TypeScript for game logic
+- RequestAnimationFrame for game loop
+- Web browser as the runtime environment
+
+### Game Engine Components
+- Custom-built 2D rendering system
+- Physics system for agent movement and collisions
+- Resource management system
+- Territory control visualization (possibly using heat maps)
+
+### LLM Integration
+- API integration with LLM providers (Claude, GPT, etc.)
+- Prompt engineering for agent behavior and team strategy
+- Context/memory management for agents
+
+### Development Tools
+- Unit testing framework (Jest or similar)
+- Browser compatibility testing
+- Performance monitoring tools (FPS counter, etc.)
+
 ## Implementation Stages
 
 See the [Stages Directory](./stages/) for detailed breakdown of:
