@@ -8,6 +8,29 @@ This document outlines the incremental development process for the AI Territory 
 2. **Regular Testing**: Verify functionality at each checkpoint before proceeding
 3. **User Feedback Integration**: Incorporate user feedback at key milestones
 4. **Maintain Compatibility**: Ensure the game continues to work in the browser at all times
+5. **Stage-Based Approach**: Follow the staged implementation plan with clear stopping points
+
+## Implementation Stages
+
+See the [Stages Directory](./stages/) for detailed breakdown of:
+- [Stage 1: Basic Rendering in 2D Game Window](./stages/stage1_basic_rendering.md)
+- [Stage 2: Game World Design with Resources](./stages/stage2_game_world.md)
+- [Stage 3: Base Camps and Hardcoded Agents](./stages/stage3_bases_and_agents.md)
+- [Stage 4: Agent Interactions and Game Mechanics](./stages/stage4_game_mechanics.md)
+- [Stage 5: LLM Agent Piloting](./stages/stage5_llm_pilots.md)
+- [Stage 6: LLM Team Spawner Implementation](./stages/stage6_llm_spawners.md)
+- [Final Stage: Polish and Refinement](./stages/stage7_polish.md)
+
+Each stage includes specific implementation requirements, expected results, testing methods, and completion criteria. See the [overview document](./stages/overview.md) for development best practices.
+
+## Development Tracking
+
+Progress is tracked in CLAUDE.md at the root of the project, including:
+- Current stage status
+- Todo items for current stage
+- Completed items
+- Testing results
+- Issues and solutions
 
 ## Development Phases and Checkpoints
 
