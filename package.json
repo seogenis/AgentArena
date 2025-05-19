@@ -1,0 +1,14 @@
+{
+  "name": "ai-territory-control-game",
+  "version": "0.1.0",
+  "description": "A browser-based strategic game where LLM-powered teams create and control AI agents competing for resources and territory",
+  "main": "index.js",
+  "scripts": {
+    "start": "serve .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "serve": "^14.2.1"
+  },
+  "devDependencies": {}
+}
