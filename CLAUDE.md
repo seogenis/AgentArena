@@ -67,4 +67,5 @@ Status: Complete - Ready for Testing
 - Mark tasks as complete as they are finished
 - Record issues and solutions encountered
 - Document testing results for stage criteria
+- Use `npm run screenshot` to capture visual state when reporting visual issues or documenting progress
 - Update stage status as appropriate
