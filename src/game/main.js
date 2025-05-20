@@ -15,15 +15,15 @@ engine.setRenderSystem(renderSystem);
 const cameraSystem = new CameraSystem(engine.width, engine.height);
 engine.setCameraSystem(cameraSystem);
 
-// Add some test shapes to verify rendering
-const testRectangle = new Rectangle(100, 100, 100, 100, '#ff0000');
-renderSystem.addRenderable(testRectangle);
+// Add demonstration shapes
+const redSquare = new Rectangle(100, 100, 100, 100, '#ff0000');
+renderSystem.addRenderable(redSquare);
 
-const testCircle = new Circle(300, 300, 50, '#00ff00');
-renderSystem.addRenderable(testCircle);
+const greenCircle = new Circle(300, 300, 50, '#00ff00');
+renderSystem.addRenderable(greenCircle);
 
-// Add some background shapes to verify camera movement
-for (let i = 0; i < 20; i++) {
+// Add some background shapes for visual interest
+for (let i = 0; i < 15; i++) {
     const x = Math.random() * engine.width * 2 - engine.width / 2;
     const y = Math.random() * engine.height * 2 - engine.height / 2;
     const size = 10 + Math.random() * 40;
@@ -49,62 +49,13 @@ cameraTarget.update = function(deltaTime) {
     this.y = 300 + Math.cos(targetTime * 0.3) * 150;
 };
 
-// Add update method to test objects
+// Add update method to renderables
 renderSystem.update = function(deltaTime) {
     for (const renderable of this.renderables) {
         if (renderable.update) {
             renderable.update(deltaTime);
         }
     }
-};
-
-// Add update to game loop
-const originalGameLoop = engine.gameLoop;
-engine.gameLoop = function(timestamp) {
-    if (!this.isRunning) return;
-    
-    // Calculate delta time
-    this.deltaTime = (timestamp - this.lastTime) / 1000;
-    this.lastTime = timestamp;
-    
-    // Update FPS counter
-    this.frameCount++;
-    if (timestamp - this.lastFpsUpdate >= this.fpsUpdateInterval) {
-        this.fps = Math.round((this.frameCount * 1000) / (timestamp - this.lastFpsUpdate));
-        this.lastFpsUpdate = timestamp;
-        this.frameCount = 0;
-        this.updateFps();
-    }
-    
-    // Update game objects
-    if (this.renderSystem && this.renderSystem.update) {
-        this.renderSystem.update(this.deltaTime);
-    }
-    
-    // Clear canvas
-    this.ctx.clearRect(0, 0, this.width, this.height);
-    
-    // Apply camera transformations
-    if (this.cameraSystem) {
-        this.cameraSystem.update(this.deltaTime);
-        this.cameraSystem.applyTransform(this.ctx);
-    }
-    
-    // Render game objects
-    if (this.renderSystem) {
-        this.renderSystem.render(this.ctx, this.deltaTime);
-    }
-    
-    // Reset transformations
-    if (this.cameraSystem) {
-        this.cameraSystem.resetTransform(this.ctx);
-    }
-    
-    // Render debug grid
-    this.renderDebugGrid();
-    
-    // Continue the game loop
-    requestAnimationFrame(this.gameLoop);
 };
 
 // Add debug grid
@@ -190,17 +141,13 @@ engine.handleCameraControls = function(deltaTime) {
     }
 };
 
-// Add camera controls to the game loop
-const originalUpdate = engine.gameLoop;
-engine.gameLoop = function(timestamp) {
+// Enhanced game loop function with proper binding
+const enhancedGameLoop = function(timestamp) {
     if (!this.isRunning) return;
     
     // Calculate delta time
     this.deltaTime = (timestamp - this.lastTime) / 1000;
     this.lastTime = timestamp;
-    
-    // Handle camera controls
-    this.handleCameraControls(this.deltaTime);
     
     // Update FPS counter
     this.frameCount++;
@@ -209,6 +156,11 @@ engine.gameLoop = function(timestamp) {
         this.lastFpsUpdate = timestamp;
         this.frameCount = 0;
         this.updateFps();
+    }
+    
+    // Handle camera controls
+    if (this.handleCameraControls) {
+        this.handleCameraControls(this.deltaTime);
     }
     
     // Update game objects
@@ -239,11 +191,14 @@ engine.gameLoop = function(timestamp) {
     this.renderDebugGrid();
     
     // Continue the game loop
-    requestAnimationFrame(this.gameLoop);
+    requestAnimationFrame(this._boundGameLoop);
 };
 
+// Properly bind the enhanced game loop to the engine
+engine._boundGameLoop = enhancedGameLoop.bind(engine);
+engine.gameLoop = engine._boundGameLoop;
+
 // Update the debug overlay with more information
-const originalUpdateFps = engine.updateFps;
 engine.updateFps = function() {
     const fpsElement = document.getElementById('fps-counter');
     if (fpsElement) {
@@ -251,6 +206,16 @@ engine.updateFps = function() {
             `Camera: (${this.cameraSystem.x.toFixed(0)}, ${this.cameraSystem.y.toFixed(0)}) Scale: ${this.cameraSystem.scale.toFixed(2)}` : '';
         
         fpsElement.textContent = `FPS: ${this.fps} | ${cameraInfo}`;
+    }
+};
+
+// Override start method to use our bound game loop
+engine.start = function() {
+    if (!this.isRunning) {
+        this.isRunning = true;
+        this.lastTime = performance.now();
+        this.lastFpsUpdate = this.lastTime;
+        requestAnimationFrame(this._boundGameLoop);
     }
 };
 
