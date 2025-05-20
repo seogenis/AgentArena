@@ -32,3 +32,6 @@ Status: In Progress
 - Record issues and solutions encountered
 - Document testing results for stage criteria
 - Update stage status as appropriate
+
+## Safety Guidelines
+- do not propose "drastic" commands such as changing permissions or deleting from root
