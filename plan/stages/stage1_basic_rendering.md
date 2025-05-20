@@ -17,6 +17,7 @@ Establish the foundational game window with basic rendering capabilities.
 
 ## Testing Methods
 - **Visual**: Confirm canvas appears and renders properly
+- **Screenshot**: Use `npm run screenshot` to capture the rendered state for documentation or bug reporting
 - **Console**: Check for rendering errors
 - **JS Tests**: Test game loop timing and rendering calls
 - **User Verification**: Test in multiple browsers
