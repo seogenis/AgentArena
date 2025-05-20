@@ -23,6 +23,7 @@ Status: Complete - Ready for Testing
 
 ## Development Commands
 - Run locally: `npm start` (runs on http://localhost:3000)
+- Take debug screenshot: `npm run screenshot` (saves as debug-screenshot.png)
 - Run tests: [TBD]
 
 ## Testing Results:
@@ -40,6 +41,9 @@ Status: Complete - Ready for Testing
    - WASD/Arrow keys to move camera (when not following target)
    - Q/E to zoom in/out
    - T to toggle following the moving white circle
+6. For debugging or documentation:
+   - Run `npm run screenshot` to capture the current game state
+   - Check the debug-screenshot.png file in the project root
 
 ## Issues and Solutions:
 - None so far
