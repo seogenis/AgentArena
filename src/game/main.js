@@ -16,22 +16,12 @@ engine.setRenderSystem(renderSystem);
 const cameraSystem = new CameraSystem(engine.width, engine.height);
 engine.setCameraSystem(cameraSystem);
 
-// Initialize world system (new for Stage 2)
-const worldSystem = new WorldSystem(engine.width * 2, engine.height * 2, 30);
+// Initialize world system with render system reference (updated for Stage 3)
+const worldSystem = new WorldSystem(engine.width * 2, engine.height * 2, 30, renderSystem);
 engine.worldSystem = worldSystem;
 
-// Add a moving target for the camera to follow
-const cameraTarget = new Circle(400, 300, 20, '#ffffff');
-renderSystem.addRenderable(cameraTarget);
-cameraSystem.setTarget(cameraTarget);
-
-// Animation function for the target
-let targetTime = 0;
-cameraTarget.update = function(deltaTime) {
-    targetTime += deltaTime;
-    this.x = 400 + Math.sin(targetTime * 0.5) * 200;
-    this.y = 300 + Math.cos(targetTime * 0.3) * 150;
-};
+// No longer need a separate camera target as we can follow an agent
+let cameraTarget = null;
 
 // Add update method to renderables
 renderSystem.update = function(deltaTime) {
@@ -107,10 +97,18 @@ function updateWorldInfo() {
     const worldInfoElement = document.getElementById('world-info');
     
     if (worldInfoElement) {
+        // Enhanced info display with team resources and agents
+        const team1Resources = info.teamResources?.team1 || { energy: 0, materials: 0, data: 0 };
+        const team2Resources = info.teamResources?.team2 || { energy: 0, materials: 0, data: 0 };
+        
         worldInfoElement.innerHTML = `
-            <div>Resources: Energy: ${info.resources.energy}, Materials: ${info.resources.materials}, Data: ${info.resources.data}</div>
+            <div>Map Resources: Energy: ${info.resources.energy}, Materials: ${info.resources.materials}, Data: ${info.resources.data}</div>
             <div>Territory: Red: ${info.territory.team1}, Blue: ${info.territory.team2}</div>
             <div>Obstacles: ${info.obstacles}</div>
+            <div style="margin-top: 5px; color: #ff7777;">Red Team: ${info.agents?.team1 || 0} agents</div>
+            <div>Resources: E:${team1Resources.energy} M:${team1Resources.materials} D:${team1Resources.data}</div>
+            <div style="margin-top: 5px; color: #7777ff;">Blue Team: ${info.agents?.team2 || 0} agents</div>
+            <div>Resources: E:${team2Resources.energy} M:${team2Resources.materials} D:${team2Resources.data}</div>
         `;
     }
 }
@@ -148,6 +146,40 @@ window.addEventListener('keydown', e => {
             engine.worldSystem.collectResourceAt(mouse.worldX, mouse.worldY);
             updateWorldInfo();
         }
+    } else if (e.key === 'r' || e.key === 'a') {
+        // 'r', 'a' keys - Create red team collector agent
+        if (engine.worldSystem) {
+            engine.worldSystem.createAgent(1, 'collector');
+            updateWorldInfo();
+        }
+    } else if (e.key === 'z') {
+        // 'z' key - Create red team explorer agent
+        if (engine.worldSystem) {
+            engine.worldSystem.createAgent(1, 'explorer');
+            updateWorldInfo();
+        }
+    } else if (e.key === 'b' || e.key === 's') {
+        // 'b', 's' keys - Create blue team collector agent
+        if (engine.worldSystem) {
+            engine.worldSystem.createAgent(2, 'collector');
+            updateWorldInfo();
+        }
+    } else if (e.key === 'x') {
+        // 'x' key - Create blue team explorer agent
+        if (engine.worldSystem) {
+            engine.worldSystem.createAgent(2, 'explorer');
+            updateWorldInfo();
+        }
+    } else if (e.key === 'f') {
+        // 'f' key - Follow a random agent with camera
+        if (engine.worldSystem && engine.worldSystem.agentSystem) {
+            const agents = engine.worldSystem.agentSystem.agents;
+            if (agents.length > 0) {
+                // Pick a random agent
+                cameraTarget = agents[Math.floor(Math.random() * agents.length)];
+                engine.cameraSystem.setTarget(cameraTarget);
+            }
+        }
     }
 });
 
@@ -168,7 +200,7 @@ engine.handleCameraControls = function(deltaTime) {
     if (keys['t'] && !this.lastToggle) {
         if (this.cameraSystem.target) {
             this.cameraSystem.target = null;
-        } else {
+        } else if (cameraTarget) {
             this.cameraSystem.target = cameraTarget;
         }
         this.lastToggle = true;
@@ -228,7 +260,7 @@ const enhancedGameLoop = function(timestamp) {
         this.renderSystem.update(this.deltaTime);
     }
     
-    // Update world system (new for Stage 2)
+    // Update world system
     if (this.worldSystem) {
         this.worldSystem.update(this.deltaTime, timestamp);
     }
@@ -253,6 +285,11 @@ const enhancedGameLoop = function(timestamp) {
     // Reset transformations
     if (this.cameraSystem) {
         this.cameraSystem.resetTransform(this.ctx);
+    }
+    
+    // Update the world info every couple of frames
+    if (this.frameCount % 10 === 0) {
+        updateWorldInfo();
     }
     
     // Continue the game loop
@@ -304,13 +341,20 @@ instructionsElement.innerHTML = `
         WASD/Arrows: Move camera<br>
         Q/E: Zoom in/out<br>
         T: Toggle target following<br>
+        F: Follow random agent<br>
         <br>
         Interactions:<br>
         Left click: Add Red team control<br>
         Right click: Add Blue team control<br>
         O key: Add obstacle at cursor<br>
         1/2/3 keys: Add resources (Energy/Materials/Data)<br>
-        C key: Collect resource at cursor
+        C key: Collect resource at cursor<br>
+        <br>
+        Agents:<br>
+        A key: Add Red collector agent<br>
+        Z key: Add Red explorer agent<br>
+        S key: Add Blue collector agent<br>
+        X key: Add Blue explorer agent
     </div>
 `;
 debugOverlay.appendChild(instructionsElement);
