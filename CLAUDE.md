@@ -24,6 +24,7 @@ Status: Completed ✅
 
 ## Development Commands
 - Run locally: `npm start` (runs on http://localhost:3000)
+- Take debug screenshot: `npm run screenshot` (saves as debug-screenshot.png)
 - Run tests: [TBD]
 
 ## Testing Results:
@@ -41,6 +42,9 @@ Status: Completed ✅
    - WASD/Arrow keys to move camera (when not following target)
    - Q/E to zoom in/out
    - T to toggle following the moving white circle
+6. For debugging or documentation:
+   - Run `npm run screenshot` to capture the current game state
+   - Check the debug-screenshot.png file in the project root
 
 ## Issues and Solutions:
 - Fixed game loop context binding issue that was causing "Cannot read properties of undefined (reading 'isRunning')" error
@@ -76,7 +80,9 @@ Status: Not Started
 - Mark tasks as complete as they are finished
 - Record issues and solutions encountered
 - Document testing results for stage criteria
+- Use `npm run screenshot` to capture visual state when reporting visual issues or documenting progress
 - Update stage status as appropriate
+- When asked to look at "relevant context", read from plan/game_mechanics.md, plan/development_roadmap.md, and plan/stages/overview.md
 
 ## Safety Guidelines
-- do not propose "drastic" commands such as changing permissions or deleting from root
+- Do not propose "drastic" commands such as changing permissions or deleting from root
