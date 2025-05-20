@@ -1,6 +1,7 @@
 import { GameEngine } from '../engine/GameEngine.js';
 import { RenderSystem } from '../engine/RenderSystem.js';
 import { CameraSystem } from '../engine/CameraSystem.js';
+import { WorldSystem } from '../engine/world/WorldSystem.js';
 import { Rectangle } from '../engine/shapes/Rectangle.js';
 import { Circle } from '../engine/shapes/Circle.js';
 
@@ -15,26 +16,9 @@ engine.setRenderSystem(renderSystem);
 const cameraSystem = new CameraSystem(engine.width, engine.height);
 engine.setCameraSystem(cameraSystem);
 
-// Add demonstration shapes
-const redSquare = new Rectangle(100, 100, 100, 100, '#ff0000');
-renderSystem.addRenderable(redSquare);
-
-const greenCircle = new Circle(300, 300, 50, '#00ff00');
-renderSystem.addRenderable(greenCircle);
-
-// Add some background shapes for visual interest
-for (let i = 0; i < 15; i++) {
-    const x = Math.random() * engine.width * 2 - engine.width / 2;
-    const y = Math.random() * engine.height * 2 - engine.height / 2;
-    const size = 10 + Math.random() * 40;
-    const color = `hsl(${Math.random() * 360}, 70%, 50%)`;
-    
-    if (Math.random() > 0.5) {
-        renderSystem.addRenderable(new Rectangle(x, y, size, size, color));
-    } else {
-        renderSystem.addRenderable(new Circle(x, y, size / 2, color));
-    }
-}
+// Initialize world system (new for Stage 2)
+const worldSystem = new WorldSystem(engine.width * 2, engine.height * 2, 30);
+engine.worldSystem = worldSystem;
 
 // Add a moving target for the camera to follow
 const cameraTarget = new Circle(400, 300, 20, '#ffffff');
@@ -60,48 +44,124 @@ renderSystem.update = function(deltaTime) {
 
 // Add debug grid
 engine.renderDebugGrid = function() {
-    const gridSize = 50;
-    const gridColor = 'rgba(255, 255, 255, 0.1)';
-    
-    this.ctx.save();
-    this.ctx.strokeStyle = gridColor;
-    this.ctx.lineWidth = 1;
-    
-    // Apply camera transform for the grid
-    if (this.cameraSystem) {
-        this.cameraSystem.applyTransform(this.ctx);
+    // We don't need the debug grid anymore since we have the hex grid
+    // Instead, let the world system render the hex grid
+    if (this.worldSystem) {
+        this.worldSystem.render(this.ctx);
     }
-    
-    // Draw vertical lines
-    for (let x = 0; x < this.width * 2; x += gridSize) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(x - this.width / 2, -this.height / 2);
-        this.ctx.lineTo(x - this.width / 2, this.height * 1.5);
-        this.ctx.stroke();
-    }
-    
-    // Draw horizontal lines
-    for (let y = 0; y < this.height * 2; y += gridSize) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(-this.width / 2, y - this.height / 2);
-        this.ctx.lineTo(this.width * 1.5, y - this.height / 2);
-        this.ctx.stroke();
-    }
-    
-    this.ctx.restore();
 };
+
+// Add mouse interaction
+const mouse = { x: 0, y: 0, isDown: false, button: 0 };
+
+window.addEventListener('mousedown', e => {
+    mouse.isDown = true;
+    mouse.button = e.button;
+    handleMouseInteraction();
+});
+
+window.addEventListener('mouseup', e => {
+    mouse.isDown = false;
+});
+
+window.addEventListener('mousemove', e => {
+    // Calculate mouse position relative to canvas
+    const rect = engine.canvas.getBoundingClientRect();
+    mouse.x = e.clientX - rect.left;
+    mouse.y = e.clientY - rect.top;
+    
+    // Convert to world coordinates
+    if (engine.cameraSystem) {
+        const worldPos = engine.cameraSystem.screenToWorld(mouse.x, mouse.y);
+        mouse.worldX = worldPos.x;
+        mouse.worldY = worldPos.y;
+    }
+    
+    // Handle mouse interaction if button is down
+    if (mouse.isDown) {
+        handleMouseInteraction();
+    }
+});
+
+function handleMouseInteraction() {
+    if (!engine.worldSystem) return;
+    
+    // Left click - Add Team 1 control (red)
+    if (mouse.button === 0) {
+        engine.worldSystem.addControlToCell(mouse.worldX, mouse.worldY, 1, 0.2);
+    }
+    
+    // Right click - Add Team 2 control (blue)
+    else if (mouse.button === 2) {
+        engine.worldSystem.addControlToCell(mouse.worldX, mouse.worldY, 2, 0.2);
+    }
+    
+    // Update debug overlay
+    updateWorldInfo();
+}
+
+function updateWorldInfo() {
+    if (!engine.worldSystem) return;
+    
+    const info = engine.worldSystem.getDebugInfo();
+    const worldInfoElement = document.getElementById('world-info');
+    
+    if (worldInfoElement) {
+        worldInfoElement.innerHTML = `
+            <div>Resources: Energy: ${info.resources.energy}, Materials: ${info.resources.materials}, Data: ${info.resources.data}</div>
+            <div>Territory: Red: ${info.territory.team1}, Blue: ${info.territory.team2}</div>
+            <div>Obstacles: ${info.obstacles}</div>
+        `;
+    }
+}
 
 // Add keyboard controls for camera
 const keys = {};
 window.addEventListener('keydown', e => {
     keys[e.key] = true;
+    
+    // Special key handling
+    if (e.key === 'o') {
+        // 'o' key - Add an obstacle at cursor position
+        if (engine.worldSystem) {
+            engine.worldSystem.addObstacleAt(mouse.worldX, mouse.worldY);
+            updateWorldInfo();
+        }
+    } else if (e.key === '1' || e.key === '2' || e.key === '3') {
+        // 1, 2, 3 keys - Add different resource types
+        if (engine.worldSystem) {
+            const resourceTypes = ['energy', 'materials', 'data'];
+            const typeIndex = parseInt(e.key) - 1;
+            
+            if (typeIndex >= 0 && typeIndex < resourceTypes.length) {
+                engine.worldSystem.addResourceAt(
+                    mouse.worldX, 
+                    mouse.worldY, 
+                    resourceTypes[typeIndex]
+                );
+                updateWorldInfo();
+            }
+        }
+    } else if (e.key === 'c') {
+        // 'c' key - Collect resource at cursor position
+        if (engine.worldSystem) {
+            engine.worldSystem.collectResourceAt(mouse.worldX, mouse.worldY);
+            updateWorldInfo();
+        }
+    }
 });
+
 window.addEventListener('keyup', e => {
     keys[e.key] = false;
 });
 
+// Prevent context menu on right-click
+window.addEventListener('contextmenu', e => {
+    e.preventDefault();
+});
+
 engine.handleCameraControls = function(deltaTime) {
-    const moveSpeed = 200; // pixels per second
+    const moveSpeed = 300; // pixels per second (increased for larger world)
     const zoomSpeed = 1;
     
     // Toggle camera following target
@@ -168,6 +228,11 @@ const enhancedGameLoop = function(timestamp) {
         this.renderSystem.update(this.deltaTime);
     }
     
+    // Update world system (new for Stage 2)
+    if (this.worldSystem) {
+        this.worldSystem.update(this.deltaTime, timestamp);
+    }
+    
     // Clear canvas
     this.ctx.clearRect(0, 0, this.width, this.height);
     
@@ -182,13 +247,13 @@ const enhancedGameLoop = function(timestamp) {
         this.renderSystem.render(this.ctx, this.deltaTime);
     }
     
+    // Render world grid (replaces debug grid)
+    this.renderDebugGrid();
+    
     // Reset transformations
     if (this.cameraSystem) {
         this.cameraSystem.resetTransform(this.ctx);
     }
-    
-    // Render debug grid
-    this.renderDebugGrid();
     
     // Continue the game loop
     requestAnimationFrame(this._boundGameLoop);
@@ -224,16 +289,34 @@ engine.init();
 
 // Add instructions to the debug overlay
 const debugOverlay = document.getElementById('debug-overlay');
+
+// Add world info section
+const worldInfoElement = document.createElement('div');
+worldInfoElement.id = 'world-info';
+worldInfoElement.style.marginTop = '10px';
+debugOverlay.appendChild(worldInfoElement);
+
+// Add interaction instructions
 const instructionsElement = document.createElement('div');
 instructionsElement.innerHTML = `
     <div style="margin-top: 10px;">
         Controls:<br>
         WASD/Arrows: Move camera<br>
         Q/E: Zoom in/out<br>
-        T: Toggle target following
+        T: Toggle target following<br>
+        <br>
+        Interactions:<br>
+        Left click: Add Red team control<br>
+        Right click: Add Blue team control<br>
+        O key: Add obstacle at cursor<br>
+        1/2/3 keys: Add resources (Energy/Materials/Data)<br>
+        C key: Collect resource at cursor
     </div>
 `;
 debugOverlay.appendChild(instructionsElement);
+
+// Update world info initially
+updateWorldInfo();
 
 // Start the game
 engine.start();
