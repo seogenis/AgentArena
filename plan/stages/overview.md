@@ -26,8 +26,8 @@ This directory contains detailed plans for each implementation stage of the AI T
 
 ## Stages Summary
 
-1. [**Basic Rendering**](./stage1_basic_rendering.md) - Establish foundational game window with basic rendering
-2. [**Game World Design**](./stage2_game_world.md) - Implement territory grid and resources
+1. [**Basic Rendering**](./stage1_basic_rendering.md) - ✅ COMPLETED - Established foundational game window with basic rendering
+2. [**Game World Design**](./stage2_game_world.md) - 🔄 NEXT - Implement territory grid and resources
 3. [**Base Camps and Agents**](./stage3_bases_and_agents.md) - Add team bases and hardcoded agents
 4. [**Game Mechanics**](./stage4_game_mechanics.md) - Implement core interactions and gameplay systems
 5. [**LLM Agent Piloting**](./stage5_llm_pilots.md) - Replace hardcoded behaviors with LLM control
