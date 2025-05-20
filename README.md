@@ -29,6 +29,15 @@ npm start
 
 Then open your browser to http://localhost:3000
 
+### Development Tools
+
+```
+# Take a screenshot of the game for debugging/documentation
+npm run screenshot
+```
+
+This will save a screenshot as `debug-screenshot.png` in the project root.
+
 ## Controls
 
 - WASD/Arrow keys: Move camera (when not following target)
