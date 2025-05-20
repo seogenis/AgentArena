@@ -17,6 +17,7 @@ This directory contains detailed plans for each implementation stage of the AI T
 3. **Testing**:
    - Follow test procedures specified for each stage
    - Document test results in CLAUDE.md
+   - Use `npm run screenshot` to capture game state for documentation and bug reports
    - Fix any issues before proceeding to the next stage
 
 4. **Code Organization**:
