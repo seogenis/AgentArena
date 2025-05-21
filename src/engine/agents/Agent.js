@@ -200,6 +200,9 @@ export class Agent {
             }
         }
         
+        // Update visuals based on current state
+        this.updateVisuals();
+        
         // Only move if not engaged in combat
         if (!this.isAttacking || !this.target) {
             // Update agent movement and behavior
@@ -272,6 +275,9 @@ export class Agent {
     
     canMoveTo(x, y, hexGrid) {
         // Check if the target position has an obstacle
+        // Make sure hexGrid exists before calling getCellAtPosition
+        if (!hexGrid) return true;
+        
         const cell = hexGrid.getCellAtPosition(x, y);
         return cell && !cell.hasObstacle;
     }
