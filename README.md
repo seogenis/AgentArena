@@ -4,7 +4,7 @@ A browser-based strategic game where LLM-powered teams create and control AI age
 
 ## Project Status
 
-Currently in development - Stage 1 complete. See [CLAUDE.md](./CLAUDE.md) for detailed project status and current implementation stage.
+Currently in development - Stage 3 complete. See [CLAUDE.md](./CLAUDE.md) for detailed project status and current implementation stage.
 
 ## Getting Started
 
@@ -43,6 +43,16 @@ This will save a screenshot as `debug-screenshot.png` in the project root.
 - WASD/Arrow keys: Move camera (when not following target)
 - Q/E: Zoom in/out
 - T: Toggle camera following the target
+- F: Follow a random agent
+- Left-click: Add Red team control to a cell
+- Right-click: Add Blue team control to a cell
+- A/R: Create a Red team collector agent
+- Z: Create a Red team explorer agent 
+- S/B: Create a Blue team collector agent
+- X: Create a Blue team explorer agent
+- O: Add obstacle at cursor position
+- 1/2/3: Add resources (Energy/Materials/Data)
+- C: Collect resource at cursor position
 
 ## Project Structure
 
@@ -57,9 +67,9 @@ This will save a screenshot as `debug-screenshot.png` in the project root.
 This game is being developed in stages:
 
 1. Basic Rendering in 2D Game Window ✅
-2. Game World Design with Resources
-3. Base Camps and Hardcoded Agents
-4. Agent Interactions and Game Mechanics
+2. Game World Design with Resources ✅
+3. Base Camps and Hardcoded Agents ✅
+4. Agent Interactions and Game Mechanics 🔄
 5. LLM Agent Piloting
 6. LLM Team Spawner Implementation
 7. Polish and Refinement
