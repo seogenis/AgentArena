@@ -72,6 +72,7 @@ Status: Completed ✅
 10. For debugging or documentation:
    - Run `npm run screenshot` to capture the current game state
    - Check the debug-screenshot.png file in the project root
+   - It is okay if things don't work or you don't know if test / screenshot worked, just make sure to inform the user
 
 ## Issues and Solutions:
 - Fixed game loop context binding issue that was causing "Cannot read properties of undefined (reading 'isRunning')" error
