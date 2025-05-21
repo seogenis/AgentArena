@@ -121,7 +121,7 @@ Status: Not Started
 - Document testing results for stage criteria
 - Use `npm run screenshot` to capture visual state when reporting visual issues or documenting progress
 - Update stage status as appropriate
-- When asked to look at "relevant context", read from plan/game_mechanics.md, plan/development_roadmap.md, and plan/stages/overview.md
+- When asked to look at "relevant .md files", read from plan/game_mechanics.md, plan/development_roadmap.md, and plan/stages/overview.md
 
 ## Safety Guidelines
 - Do not propose "drastic" commands such as changing permissions or deleting from root
