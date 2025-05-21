@@ -1,6 +1,8 @@
 import { HexGrid } from '../grid/HexGrid.js';
 import { ResourceSystem } from '../resources/ResourceSystem.js';
 import { ObstacleSystem } from '../obstacles/ObstacleSystem.js';
+import { BaseSystem } from '../bases/BaseSystem.js';
+import { AgentSystem } from '../agents/AgentSystem.js';
 
 export class WorldSystem {
     constructor(width, height, hexSize = 40) {
@@ -10,6 +12,8 @@ export class WorldSystem {
         // Create subsystems
         this.resourceSystem = new ResourceSystem(this.hexGrid);
         this.obstacleSystem = new ObstacleSystem(this.hexGrid);
+        this.baseSystem = new BaseSystem(this.hexGrid);
+        this.agentSystem = new AgentSystem(this.hexGrid, this.baseSystem);
         
         // Initialize the world
         this.initialize();
@@ -19,21 +23,36 @@ export class WorldSystem {
         // Generate obstacles
         this.obstacleSystem.generateObstacles(15);
         
-        // Add some initial territory control
-        this.hexGrid.addInitialTerritoryControl();
+        // Initialize bases (replaces initial territory control)
+        this.baseSystem.initialize();
         
         // Spawn initial resources
         this.resourceSystem.initialResourceSpawn(20);
+        
+        // Initialize agents
+        this.agentSystem.initialize();
     }
     
     update(deltaTime, timestamp) {
         // Update resources (handle spawning)
         this.resourceSystem.update(deltaTime, timestamp);
+        
+        // Update bases
+        this.baseSystem.update(deltaTime);
+        
+        // Update agents
+        this.agentSystem.update(deltaTime);
     }
     
     render(ctx) {
         // Render the hex grid (will include territory, obstacles, and resources)
         this.hexGrid.render(ctx);
+        
+        // Render bases
+        this.baseSystem.render(ctx);
+        
+        // Render agents
+        this.agentSystem.render(ctx);
     }
     
     // Add some interaction capabilities
@@ -77,6 +96,10 @@ export class WorldSystem {
         return false;
     }
     
+    createAgentAt(x, y, team, type) {
+        return this.agentSystem.createAgent(team, type);
+    }
+    
     // Add debug information for overlay
     getDebugInfo() {
         const resourceCounts = {
@@ -105,6 +128,14 @@ export class WorldSystem {
             }
         }
         
+        // Add team resources from base system
+        const team1Resources = this.baseSystem.getResourceCounts(1);
+        const team2Resources = this.baseSystem.getResourceCounts(2);
+        
+        // Count agents by team
+        const team1Agents = this.agentSystem.agents.filter(a => a.team === 1).length;
+        const team2Agents = this.agentSystem.agents.filter(a => a.team === 2).length;
+        
         return {
             resources: resourceCounts,
             territory: {
@@ -112,7 +143,15 @@ export class WorldSystem {
                 team2: controlledByTeam2
             },
             obstacles: obstacleCount,
-            totalCells: this.hexGrid.cells.length
+            totalCells: this.hexGrid.cells.length,
+            baseResources: {
+                team1: team1Resources,
+                team2: team2Resources
+            },
+            agents: {
+                team1: team1Agents,
+                team2: team2Agents
+            }
         };
     }
 }

@@ -107,10 +107,16 @@ function updateWorldInfo() {
     const worldInfoElement = document.getElementById('world-info');
     
     if (worldInfoElement) {
+        // Format base resources
+        const team1Resources = info.baseResources?.team1 || { energy: 0, materials: 0, data: 0 };
+        const team2Resources = info.baseResources?.team2 || { energy: 0, materials: 0, data: 0 };
+        
         worldInfoElement.innerHTML = `
-            <div>Resources: Energy: ${info.resources.energy}, Materials: ${info.resources.materials}, Data: ${info.resources.data}</div>
+            <div>World Resources: Energy: ${info.resources.energy}, Materials: ${info.resources.materials}, Data: ${info.resources.data}</div>
             <div>Territory: Red: ${info.territory.team1}, Blue: ${info.territory.team2}</div>
             <div>Obstacles: ${info.obstacles}</div>
+            <div>Red Base: E:${team1Resources.energy} M:${team1Resources.materials} D:${team1Resources.data} | Agents: ${info.agents?.team1 || 0}</div>
+            <div>Blue Base: E:${team2Resources.energy} M:${team2Resources.materials} D:${team2Resources.data} | Agents: ${info.agents?.team2 || 0}</div>
         `;
     }
 }
@@ -146,6 +152,30 @@ window.addEventListener('keydown', e => {
         // 'c' key - Collect resource at cursor position
         if (engine.worldSystem) {
             engine.worldSystem.collectResourceAt(mouse.worldX, mouse.worldY);
+            updateWorldInfo();
+        }
+    } else if (e.key === 'a') {
+        // 'a' key - Add a red team agent (collector) at cursor position
+        if (engine.worldSystem) {
+            engine.worldSystem.createAgentAt(mouse.worldX, mouse.worldY, 1, 'Collector');
+            updateWorldInfo();
+        }
+    } else if (e.key === 'z') {
+        // 'z' key - Add a red team agent (explorer) at cursor position
+        if (engine.worldSystem) {
+            engine.worldSystem.createAgentAt(mouse.worldX, mouse.worldY, 1, 'Explorer');
+            updateWorldInfo();
+        }
+    } else if (e.key === 's') {
+        // 's' key - Add a blue team agent (collector) at cursor position
+        if (engine.worldSystem) {
+            engine.worldSystem.createAgentAt(mouse.worldX, mouse.worldY, 2, 'Collector');
+            updateWorldInfo();
+        }
+    } else if (e.key === 'x') {
+        // 'x' key - Add a blue team agent (explorer) at cursor position
+        if (engine.worldSystem) {
+            engine.worldSystem.createAgentAt(mouse.worldX, mouse.worldY, 2, 'Explorer');
             updateWorldInfo();
         }
     }
@@ -310,7 +340,13 @@ instructionsElement.innerHTML = `
         Right click: Add Blue team control<br>
         O key: Add obstacle at cursor<br>
         1/2/3 keys: Add resources (Energy/Materials/Data)<br>
-        C key: Collect resource at cursor
+        C key: Collect resource at cursor<br>
+        <br>
+        Agents:<br>
+        A key: Add Red collector agent<br>
+        Z key: Add Red explorer agent<br>
+        S key: Add Blue collector agent<br>
+        X key: Add Blue explorer agent
     </div>
 `;
 debugOverlay.appendChild(instructionsElement);
