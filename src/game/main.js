@@ -101,14 +101,37 @@ function updateWorldInfo() {
         const team1Resources = info.teamResources?.team1 || { energy: 0, materials: 0, data: 0 };
         const team2Resources = info.teamResources?.team2 || { energy: 0, materials: 0, data: 0 };
         
+        // LLM stats formatting
+        let llmStatsHtml = '';
+        if (info.llmEnabled && info.llmStats) {
+            const stats = info.llmStats;
+            const successRate = Math.round(stats.successRate * 100);
+            
+            llmStatsHtml = `
+                <div style="margin-top: 10px; border-top: 1px solid #555; padding-top: 5px;">
+                    <div>LLM Control: <span style="color: #33ff33;">ENABLED</span></div>
+                    <div>Decisions: ${stats.decisions} (${successRate}% success)</div>
+                    <div>Avg Response Time: ${Math.round(stats.avgResponseTime)}ms</div>
+                </div>
+            `;
+        } else {
+            llmStatsHtml = `
+                <div style="margin-top: 10px; border-top: 1px solid #555; padding-top: 5px;">
+                    <div>LLM Control: <span style="color: #ff5555;">DISABLED</span></div>
+                    <div>Press L to enable LLM agent control</div>
+                </div>
+            `;
+        }
+        
         worldInfoElement.innerHTML = `
             <div>Map Resources: Energy: ${info.resources.energy}, Materials: ${info.resources.materials}, Data: ${info.resources.data}</div>
             <div>Territory: Red: ${info.territory.team1}, Blue: ${info.territory.team2}</div>
             <div>Obstacles: ${info.obstacles}</div>
-            <div style="margin-top: 5px; color: #ff7777;">Red Team: ${info.agents?.team1 || 0} agents</div>
+            <div style="margin-top: 5px; color: #ff7777;">Red Team: ${info.agents?.team1 || 0} agents (${info.agents?.llmTeam1 || 0} LLM)</div>
             <div>Resources: E:${team1Resources.energy} M:${team1Resources.materials} D:${team1Resources.data}</div>
-            <div style="margin-top: 5px; color: #7777ff;">Blue Team: ${info.agents?.team2 || 0} agents</div>
+            <div style="margin-top: 5px; color: #7777ff;">Blue Team: ${info.agents?.team2 || 0} agents (${info.agents?.llmTeam2 || 0} LLM)</div>
             <div>Resources: E:${team2Resources.energy} M:${team2Resources.materials} D:${team2Resources.data}</div>
+            ${llmStatsHtml}
         `;
     }
 }
@@ -200,6 +223,44 @@ window.addEventListener('keydown', e => {
         // 'k' key - Create death effect for testing
         if (engine.worldSystem) {
             engine.worldSystem.createDeathEffect(mouse.worldX, mouse.worldY, 2);
+        }
+    } else if (e.key === 'l') {
+        // 'l' key - Toggle LLM control system
+        if (engine.worldSystem) {
+            const llmEnabled = engine.worldSystem.toggleLLMControl();
+            console.log(`LLM control system ${llmEnabled ? 'enabled' : 'disabled'}`);
+            updateWorldInfo();
+        }
+    } else if (e.key === 'q' && e.shiftKey) {
+        // Shift+Q - Create LLM-controlled Red team collector
+        if (engine.worldSystem) {
+            engine.worldSystem.createLLMAgent(1, 'collector');
+            updateWorldInfo();
+        }
+    } else if (e.key === 'a' && e.shiftKey) {
+        // Shift+A - Create LLM-controlled Red team explorer
+        if (engine.worldSystem) {
+            engine.worldSystem.createLLMAgent(1, 'explorer');
+            updateWorldInfo();
+        }
+    } else if (e.key === 'w' && e.shiftKey) {
+        // Shift+W - Create LLM-controlled Blue team collector
+        if (engine.worldSystem) {
+            engine.worldSystem.createLLMAgent(2, 'collector');
+            updateWorldInfo();
+        }
+    } else if (e.key === 's' && e.shiftKey) {
+        // Shift+S - Create LLM-controlled Blue team explorer
+        if (engine.worldSystem) {
+            engine.worldSystem.createLLMAgent(2, 'explorer');
+            updateWorldInfo();
+        }
+    } else if (e.key === 'c' && e.shiftKey) {
+        // Shift+C - Convert existing agents to LLM control
+        if (engine.worldSystem) {
+            const count = engine.worldSystem.convertAgentsToLLM(2); // Convert 2 random agents
+            console.log(`Converted ${count} agents to LLM control`);
+            updateWorldInfo();
         }
     }
 });
@@ -381,7 +442,15 @@ instructionsElement.innerHTML = `
         P key: Toggle combat system<br>
         H key: Test hit effect at cursor<br>
         K key: Test death effect at cursor<br>
-        R key: Reset game (when game over)
+        R key: Reset game (when game over)<br>
+        <br>
+        LLM Control:<br>
+        L key: Toggle LLM agent control<br>
+        Shift+Q: Create LLM Red collector<br>
+        Shift+A: Create LLM Red explorer<br>
+        Shift+W: Create LLM Blue collector<br>
+        Shift+S: Create LLM Blue explorer<br>
+        Shift+C: Convert 2 agents to LLM
     </div>
 `;
 debugOverlay.appendChild(instructionsElement);

@@ -2,12 +2,18 @@ import { Circle } from '../shapes/Circle.js';
 import { Rectangle } from '../shapes/Rectangle.js';
 
 export class Agent {
-    constructor(id, x, y, teamId, type = 'collector') {
+    // States for decision system
+    static CONTROL_MODE = {
+        HARDCODED: 'hardcoded', // Uses predefined patterns
+        LLM: 'llm'              // Uses LLM for decisions
+    };
+    constructor(id, x, y, teamId, type = 'collector', controlMode = Agent.CONTROL_MODE.HARDCODED) {
         this.id = id;
         this.x = x;
         this.y = y;
         this.teamId = teamId;
         this.type = type; // 'collector' or 'explorer'
+        this.controlMode = controlMode; // How this agent makes decisions
         
         // Movement parameters
         this.speed = type === 'collector' ? 
@@ -51,6 +57,11 @@ export class Agent {
         this.zIndex = 5;
         this.isVisible = true;
         
+        // LLM decision tracking
+        this.lastDecisionTime = 0;
+        this.decisionCooldown = 3 + Math.random() * 2; // 3-5 seconds between decisions
+        this.lastDecision = null;
+        
         // Movement patterns - different for each type
         if (type === 'collector') {
             this.movementPatterns = [
@@ -73,6 +84,11 @@ export class Agent {
         
         // Set up initial waypoints based on pattern
         this.setupPattern();
+        
+        // Visual indicator for LLM-controlled agents
+        if (this.controlMode === Agent.CONTROL_MODE.LLM) {
+            this.outlineColor = this.teamId === 1 ? '#ffaa33' : '#33ffaa'; // Different outline for LLM agents
+        }
     }
     
     setupPattern() {
@@ -203,22 +219,40 @@ export class Agent {
         // Update visuals based on current state
         this.updateVisuals();
         
+        // Update decision timer (for LLM-controlled agents)
+        if (this.controlMode === Agent.CONTROL_MODE.LLM) {
+            this.lastDecisionTime += deltaTime;
+        }
+        
         // Only move if not engaged in combat
         if (!this.isAttacking || !this.target) {
             // Update agent movement and behavior
             this.updateMovement(deltaTime, hexGrid);
             
-            // Update pattern if needed
-            this.patternUpdateTime += deltaTime;
-            if (this.patternUpdateTime >= this.patternDuration) {
-                this.patternUpdateTime = 0;
-                this.currentPattern = (this.currentPattern + 1) % this.movementPatterns.length;
-                this.setupPattern();
+            // For hardcoded agents, update pattern if needed
+            if (this.controlMode === Agent.CONTROL_MODE.HARDCODED) {
+                this.patternUpdateTime += deltaTime;
+                if (this.patternUpdateTime >= this.patternDuration) {
+                    this.patternUpdateTime = 0;
+                    this.currentPattern = (this.currentPattern + 1) % this.movementPatterns.length;
+                    this.setupPattern();
+                }
             }
         } else if (this.target) {
             // Move toward target if engaged in combat
             this.moveTowardTarget(deltaTime, hexGrid);
         }
+    }
+    
+    // Check if agent is ready for a new LLM decision
+    isReadyForDecision() {
+        return this.controlMode === Agent.CONTROL_MODE.LLM && 
+               this.lastDecisionTime >= this.decisionCooldown;
+    }
+    
+    // Reset decision timer after making a decision
+    resetDecisionTimer() {
+        this.lastDecisionTime = 0;
     }
     
     updateMovement(deltaTime, hexGrid) {

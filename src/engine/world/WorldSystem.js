@@ -5,6 +5,7 @@ import { BaseSystem } from '../bases/BaseSystem.js';
 import { AgentSystem } from '../agents/AgentSystem.js';
 import { CollisionSystem } from '../utils/CollisionSystem.js';
 import { CombatSystem } from '../utils/CombatSystem.js';
+import { LLMAgentPilot } from '../llm/LLMAgentPilot.js';
 
 export class WorldSystem {
     constructor(width, height, hexSize = 40, renderSystem) {
@@ -33,12 +34,26 @@ export class WorldSystem {
         );
         this.agentSystem.initialize();
         
+        // Initialize LLM agent pilot system
+        this.llmAgentPilot = new LLMAgentPilot(this, {
+            llm: {
+                mockMode: true // Use mock mode for testing
+            },
+            decisionInterval: 3000 // 3 seconds between decisions
+        });
+        
+        // Connect the agent system to the LLM pilot
+        this.agentSystem.setLLMPilot(this.llmAgentPilot);
+        
         // Victory conditions
         this.gameOver = false;
         this.winner = null;
         this.victoryThreshold = 0.75; // 75% territory control for victory
         this.victoryTimer = 0;
         this.victoryTimerThreshold = 15; // 15 seconds of maintaining control
+        
+        // LLM control flags
+        this.llmControlEnabled = false;
     }
     
     initialize() {
@@ -68,11 +83,42 @@ export class WorldSystem {
         // Update agents
         this.agentSystem.update(deltaTime);
         
+        // Update LLM agent pilot system
+        if (this.llmControlEnabled && this.llmAgentPilot) {
+            this.llmAgentPilot.update(deltaTime, timestamp);
+        }
+        
         // Update territory control from agent positions
         this.agentSystem.updateTerritoryControl(deltaTime);
         
         // Check victory conditions
         this.checkVictoryConditions(deltaTime);
+    }
+    
+    // Toggle LLM control for agents
+    toggleLLMControl() {
+        this.llmControlEnabled = !this.llmControlEnabled;
+        this.agentSystem.setLLMControlEnabled(this.llmControlEnabled);
+        
+        return this.llmControlEnabled;
+    }
+    
+    // Create an LLM-controlled agent
+    createLLMAgent(teamId, type = 'collector') {
+        return this.agentSystem.createLLMAgent(teamId, type);
+    }
+    
+    // Convert existing agents to LLM control
+    convertAgentsToLLM(count = 1, teamId = null) {
+        return this.agentSystem.convertAgentsToLLM(count, teamId);
+    }
+    
+    // Get LLM performance statistics
+    getLLMPerformanceStats() {
+        if (this.llmAgentPilot) {
+            return this.llmAgentPilot.getPerformanceStats();
+        }
+        return null;
     }
     
     checkVictoryConditions(deltaTime) {
@@ -315,8 +361,18 @@ export class WorldSystem {
         const team2Resources = this.baseSystem.getResources(2);
         
         // Get agent counts
-        const team1Agents = this.agentSystem.getAgentsByTeam(1).length;
-        const team2Agents = this.agentSystem.getAgentsByTeam(2).length;
+        const allTeam1Agents = this.agentSystem.getAgentsByTeam(1);
+        const allTeam2Agents = this.agentSystem.getAgentsByTeam(2);
+        
+        const team1Agents = allTeam1Agents.length;
+        const team2Agents = allTeam2Agents.length;
+        
+        // Count LLM-controlled agents
+        const llmTeam1Agents = allTeam1Agents.filter(a => a.controlMode === Agent.CONTROL_MODE.LLM).length;
+        const llmTeam2Agents = allTeam2Agents.filter(a => a.controlMode === Agent.CONTROL_MODE.LLM).length;
+        
+        // Get LLM stats if available
+        const llmStats = this.llmAgentPilot ? this.llmAgentPilot.getPerformanceStats() : null;
         
         return {
             resources: resourceCounts,
@@ -330,10 +386,14 @@ export class WorldSystem {
             },
             agents: {
                 team1: team1Agents,
-                team2: team2Agents
+                team2: team2Agents,
+                llmTeam1: llmTeam1Agents,
+                llmTeam2: llmTeam2Agents
             },
             obstacles: obstacleCount,
-            totalCells: this.hexGrid.cells.length
+            totalCells: this.hexGrid.cells.length,
+            llmEnabled: this.llmControlEnabled,
+            llmStats: llmStats
         };
     }
 }

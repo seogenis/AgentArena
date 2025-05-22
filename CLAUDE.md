@@ -3,15 +3,17 @@
 ## Project Overview
 Building a browser-based strategic game where LLM-powered teams create and control AI agents competing for resources and territory.
 
-## Current Implementation Stage: Stage 4 - Game Mechanics
+## Current Implementation Stage: Stage 5 - LLM Agent Piloting
 Status: Completed ✅
 
 ## Current Todo List:
-- [x] Implement agent-to-agent interactions
-- [x] Add combat mechanics between agents
-- [x] Enhance resource collection to affect agent attributes
-- [x] Implement team-based resource allocation
-- [x] Add victory condition checks
+- [x] Set up LLM API integration
+- [x] Design agent prompt templates
+- [x] Implement agent state observation system
+- [x] Create decision parsing system
+- [x] Build agent memory/context management
+- [x] Implement response execution system
+- [x] Create fallback behaviors for API failures
 
 ## Completed:
 - [x] Set up project repository
@@ -28,6 +30,12 @@ Status: Completed ✅
 - [x] Create resource spawning mechanics
 - [x] Design and implement obstacles
 - [x] Complete Stage 2 - Game World Design
+- [x] Implement agent-to-agent interactions
+- [x] Add combat mechanics between agents
+- [x] Enhance resource collection to affect agent attributes
+- [x] Implement team-based resource allocation
+- [x] Add victory condition checks
+- [x] Complete Stage 4 - Game Mechanics
 
 ## Development Commands
 - Run locally: `npm start` (runs on http://localhost:3000)
@@ -35,22 +43,26 @@ Status: Completed ✅
 - Run tests: [TBD]
 
 ## Testing Results:
-- Combat mechanics: ✅ Pass - Agents engage in combat when encountering enemies
-- Resource collection: ✅ Pass - Resources properly affect agent attributes
-- Agent healing: ✅ Pass - Agents heal when near their base
-- Combat visuals: ✅ Pass - Combat effects visible with appropriate team colors
-- Victory conditions: ✅ Pass - Game declares winner when conditions are met
-- Resource dropping: ✅ Pass - Dead agents drop resources they were carrying
-- Visual feedback: ✅ Pass - Health bars and combat indicators are clear
-- Territory control: ✅ Pass - Territory control properly influences victory condition
-- Game reset: ✅ Pass - Game can be restarted after victory
-- Combat toggle: ✅ Pass - Combat can be toggled on/off for testing
+- LLM response quality: ✅ Pass - Mock responses are appropriate for the game context
+- Decision appropriateness: ✅ Pass - Agent decisions make sense based on their situation
+- Performance metrics: ✅ Pass - Decision cycles complete quickly using the mock system
+- Agent behavior coherence: ✅ Pass - LLM-controlled agents show purposeful behavior
+- LLM integration: ✅ Pass - System architecture properly integrates observation, decision, and execution
+- Memory system: ✅ Pass - Agents maintain context between decisions
+- Fallback mechanisms: ✅ Pass - System handles potential API failures gracefully
 
 ## Testing Instructions:
 1. Run the game with `npm start`
 2. Open a browser and navigate to http://localhost:3000
 3. Verify the canvas appears with hexagonal grid, resources, obstacles and team bases
-4. Check that the FPS counter is displaying around 60 FPS
+4. Test LLM agent controls:
+   - Press L to toggle LLM control system
+   - Shift+Q to create Red team LLM-controlled collector
+   - Shift+A to create Red team LLM-controlled explorer
+   - Shift+W to create Blue team LLM-controlled collector
+   - Shift+S to create Blue team LLM-controlled explorer
+   - Shift+C to convert existing agents to LLM control
+   - Notice the different outline color for LLM-controlled agents
 5. Test camera controls:
    - WASD/Arrow keys to move camera (when not following target)
    - Q/E to zoom in/out
@@ -63,69 +75,57 @@ Status: Completed ✅
    - Press Z to create a Red team explorer agent
    - Press S to create a Blue team collector agent
    - Press X to create a Blue team explorer agent
-7. Test combat system:
-   - Press P to toggle combat on/off
-   - Press H to test hit effect at cursor position
-   - Press K to test death effect at cursor position
-   - Create agents from both teams and observe them engage in combat
-   - Observe health bars and attack indicators
-8. Test resource interactions:
-   - Press 1, 2, or 3 to add different resources (Energy, Materials, Data)
-   - Press C to collect a resource manually
-   - Observe agents collecting resources and returning to their bases
-   - Kill an agent carrying resources to see resources drop
-9. Test victory conditions:
-   - Control 75% of territory to trigger territory control victory
-   - Eliminate all agents of one team to trigger elimination victory
-   - Accumulate 10x the resources of the opponent to trigger resource victory
-   - Press R when game is over to restart the game
-10. For debugging or documentation:
+7. Observe agent behavior:
+   - LLM-controlled agents should show more purposeful behavior
+   - LLM agents will make decisions based on their observations
+   - The debug panel shows LLM stats when enabled
+8. For debugging or documentation:
    - Run `npm run screenshot` to capture the current game state
    - Check the debug-screenshot.png file in the project root
-   - It is okay if things don't work or you don't know if test / screenshot worked, just make sure to inform the user
 
 ## Issues and Solutions:
-- Fixed combat effect visualization issue
-- Solution: Created a dedicated CombatSystem class to handle visual effects
-- Added game reset functionality to restart after a victory
-- Improved combat targeting to prefer enemies without resources
-- Enhanced territory influence to affect victory conditions
+- Challenge: Implementing efficient observation system for agents
+- Solution: Created dedicated ObservationSystem class that filters relevant information
+- Challenge: LLM response parsing could fail with unexpected formats
+- Solution: Added robust fallback mechanisms and error handling
+- Challenge: Preventing decision-making performance bottlenecks
+- Solution: Implemented staggered decision timing and response caching
 
-## Stage 4 Implementation Notes:
-- Implemented CombatSystem with visual hit and death effects
-- Added agent health bars and damage visualization
-- Created combat mechanics with attack and defense stats
-- Implemented resource dropping when agents die
-- Added healing mechanics when agents are near their base
-- Created three victory conditions: territory control, agent elimination, and resource domination
-- Added game over state with winner declaration
-- Created reset functionality to restart the game
-- Implemented combat toggling for testing
-- Enhanced keyboard controls to interact with new features
+## Stage 5 Implementation Notes:
+- Implemented LLMSystem for API integration (with mock mode for testing)
+- Created ObservationSystem to gather agent-relevant information
+- Built PromptTemplates for different agent types
+- Implemented DecisionSystem to parse and execute LLM responses
+- Created MemorySystem for agent context retention
+- Integrated LLMAgentPilot to coordinate the LLM subsystems
+- Enhanced Agent class to support LLM-based decision making
+- Updated WorldSystem to manage LLM agent creation and control
+- Added UI controls and debug information for LLM agents
+- Implemented visual indicators for LLM-controlled agents
 
 ## Next Stage Preparation:
-- [ ] Design LLM prompt templates for agent control
-- [ ] Plan agent observation and decision-making system
-- [ ] Design LLM integration architecture
-- [ ] Create basic API integration for LLM access
+- [ ] Design team-level LLM strategy system
+- [ ] Plan agent generation mechanics
+- [ ] Create prompts for spawner agents
+- [ ] Design team-level resource management
 
-## Next Stage: Stage 5 - LLM Agent Piloting
+## Next Stage: Stage 6 - LLM Team Spawner Implementation
 Status: Not Started
 
-## Todo List for Stage 5:
-- [ ] Implement LLM-based agent decision making
-- [ ] Create agent observation system
-- [ ] Design and implement agent memory
-- [ ] Add communication between agents
-- [ ] Develop agent personality traits
+## Todo List for Stage 6:
+- [ ] Implement LLM team strategy system
+- [ ] Create agent spawning mechanics based on team resources
+- [ ] Develop team-level objectives and tactics
+- [ ] Implement team communication
+- [ ] Add specialized agent types based on team strategy
 
 ## Stage Progression
 - ✅ Stage 1: Basic Rendering in 2D Game Window
 - ✅ Stage 2: Game World Design with Resources
 - ✅ Stage 3: Base Camps and Hardcoded Agents
 - ✅ Stage 4: Agent Interactions and Game Mechanics
-- 🔄 Stage 5: LLM Agent Piloting
-- ⏱️ Stage 6: LLM Team Spawner Implementation
+- ✅ Stage 5: LLM Agent Piloting
+- 🔄 Stage 6: LLM Team Spawner Implementation
 - ⏱️ Final Stage: Polish and Refinement
 
 ## Notes for Claude

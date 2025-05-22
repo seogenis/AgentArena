@@ -11,6 +11,11 @@ export class AgentSystem {
         this.combatRange = 120; // How far agents can detect enemies
         this.combatEnabled = true; // Allow toggling combat for testing
         this.healingRange = 60; // How close to base for healing
+        
+        // LLM agent control
+        this.llmPilot = null; // Will be set by WorldSystem
+        this.llmControlRatio = 0.5; // Percentage of agents that use LLM control (0.0 - 1.0)
+        this.llmControlEnabled = false; // Toggle for LLM control
     }
 
     initialize() {
@@ -30,7 +35,7 @@ export class AgentSystem {
         this.createAgent(2, 'explorer');  // Explorer
     }
 
-    createAgent(teamId, type = 'collector') {
+    createAgent(teamId, type = 'collector', forceControlMode = null) {
         // Get base position for the team
         const basePos = this.baseSystem.getBasePosition(teamId);
         if (!basePos) return null;
@@ -39,12 +44,22 @@ export class AgentSystem {
         const offsetX = (Math.random() * 60) - 30;
         const offsetY = (Math.random() * 60) - 30;
         
+        // Determine control mode
+        let controlMode = Agent.CONTROL_MODE.HARDCODED;
+        
+        if (forceControlMode) {
+            controlMode = forceControlMode;
+        } else if (this.llmControlEnabled && Math.random() < this.llmControlRatio) {
+            controlMode = Agent.CONTROL_MODE.LLM;
+        }
+        
         const agent = new Agent(
             this.agentIdCounter++,
             basePos.x + offsetX,
             basePos.y + offsetY,
             teamId,
-            type
+            type,
+            controlMode
         );
         
         // Add to agent list
@@ -54,6 +69,11 @@ export class AgentSystem {
         this.renderSystem.addRenderable(agent);
         
         return agent;
+    }
+    
+    // Create a specifically LLM-controlled agent
+    createLLMAgent(teamId, type = 'collector') {
+        return this.createAgent(teamId, type, Agent.CONTROL_MODE.LLM);
     }
 
     removeAgent(agent) {
@@ -103,7 +123,60 @@ export class AgentSystem {
             if (this.combatEnabled) {
                 this.processCombat(agent, deltaTime);
             }
+            
+            // Check if LLM-controlled agent needs a decision
+            // Note: The actual decision-making is handled by LLMAgentPilot
+            if (this.llmPilot && agent.isReadyForDecision()) {
+                agent.resetDecisionTimer();
+            }
         }
+    }
+    
+    // Set the LLM pilot system reference
+    setLLMPilot(llmPilot) {
+        this.llmPilot = llmPilot;
+    }
+    
+    // Enable or disable LLM control for agents
+    setLLMControlEnabled(enabled, ratio = 0.5) {
+        this.llmControlEnabled = enabled;
+        this.llmControlRatio = Math.max(0, Math.min(1, ratio)); // Clamp between 0 and 1
+        
+        console.log(`LLM agent control ${enabled ? 'enabled' : 'disabled'} with ratio ${this.llmControlRatio}`);
+    }
+    
+    // Convert existing agents to LLM control
+    convertAgentsToLLM(count = 1, teamId = null) {
+        // Get eligible agents (hardcoded agents, optionally filter by team)
+        const eligibleAgents = this.agents.filter(a => 
+            a.controlMode === Agent.CONTROL_MODE.HARDCODED &&
+            (teamId === null || a.teamId === teamId)
+        );
+        
+        if (eligibleAgents.length === 0) return 0;
+        
+        // Convert the requested number of agents (or all eligible ones)
+        const agentsToConvert = Math.min(count, eligibleAgents.length);
+        let convertedCount = 0;
+        
+        for (let i = 0; i < agentsToConvert; i++) {
+            const agentIndex = Math.floor(Math.random() * eligibleAgents.length);
+            const agent = eligibleAgents[agentIndex];
+            
+            // Convert to LLM control
+            agent.controlMode = Agent.CONTROL_MODE.LLM;
+            agent.outlineColor = agent.teamId === 1 ? '#ffaa33' : '#33ffaa'; // Visual indicator
+            agent.resetDecisionTimer();
+            
+            convertedCount++;
+            
+            // Remove from eligible list to prevent double selection
+            eligibleAgents.splice(agentIndex, 1);
+            
+            if (eligibleAgents.length === 0) break;
+        }
+        
+        return convertedCount;
     }
     
     processCombat(agent, deltaTime) {
