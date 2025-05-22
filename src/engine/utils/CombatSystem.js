@@ -122,6 +122,68 @@ export class CombatSystem {
         return effect;
     }
     
+    createCommunicationEffect(x, y, teamId) {
+        // Create a visual communication effect
+        const effect = {
+            id: this.effectIdCounter++,
+            x,
+            y,
+            teamId,
+            radius: 15,
+            maxRadius: 15,
+            lifespan: 0.5, // seconds
+            remainingTime: 0.5,
+            zIndex: 19, // Slightly behind combat effects
+            render: function(ctx) {
+                // Draw communication pulses
+                const opacity = this.remainingTime / this.lifespan;
+                const color = this.teamId === 1 ? 
+                    `rgba(220, 160, 160, ${opacity * 0.7})` : 
+                    `rgba(160, 160, 220, ${opacity * 0.7})`;
+                
+                // Pulsing circle
+                const pulseScale = 0.7 + Math.sin(this.remainingTime * 20) * 0.3;
+                
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * pulseScale, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Connection lines (chat bubbles)
+                const bubbleCount = 3;
+                for (let i = 0; i < bubbleCount; i++) {
+                    const angle = (Math.PI / 4) * i + (1 - opacity) * Math.PI / 2;
+                    const distance = this.radius * 0.8 * (1 - opacity * 0.5);
+                    const size = 2 + i * 0.7;
+                    
+                    const bx = this.x + Math.cos(angle) * distance;
+                    const by = this.y + Math.sin(angle) * distance;
+                    
+                    ctx.fillStyle = this.teamId === 1 ? 
+                        `rgba(240, 200, 200, ${opacity})` : 
+                        `rgba(200, 200, 240, ${opacity})`;
+                    
+                    ctx.beginPath();
+                    ctx.arc(bx, by, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            },
+            update: function(deltaTime) {
+                this.remainingTime -= deltaTime;
+                return this.remainingTime > 0;
+            }
+        };
+        
+        // Add to render system
+        this.renderSystem.addRenderable(effect);
+        
+        // Add to effects list
+        this.effects.push(effect);
+        
+        return effect;
+    }
+    
     update(deltaTime) {
         // Update all combat effects
         for (let i = this.effects.length - 1; i >= 0; i--) {

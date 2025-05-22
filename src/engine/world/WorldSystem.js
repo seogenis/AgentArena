@@ -31,6 +31,11 @@ export class WorldSystem {
             this.baseSystem,
             this.collisionSystem
         );
+        
+        // Initialize LLM components
+        this.agentSystem.initializeLLMComponents(this);
+        
+        // Initialize agent system
         this.agentSystem.initialize();
         
         // Victory conditions
@@ -276,10 +281,38 @@ export class WorldSystem {
         return this.combatSystem.createDeathEffect(x, y, teamId);
     }
     
+    // Create communication effect for agent information sharing
+    createCommunicationEffect(x, y, teamId) {
+        return this.combatSystem.createCommunicationEffect(x, y, teamId);
+    }
+    
+    // Create communication effect for agent information sharing
+    createCommunicationEffect(x, y, teamId) {
+        // This would normally create a visual effect to show agents communicating
+        // For simplicity, we'll log to console for now
+        console.log(`Communication effect between agents of team ${teamId} at (${x.toFixed(0)}, ${y.toFixed(0)})`); 
+        return true;
+    }
+    
     // Toggle combat system
     toggleCombat() {
         this.agentSystem.combatEnabled = !this.agentSystem.combatEnabled;
         return this.agentSystem.combatEnabled;
+    }
+    
+    // Toggle LLM control for all agents
+    toggleLLMControl() {
+        return this.agentSystem.toggleLLMControl();
+    }
+    
+    // Toggle agent perception visualization
+    togglePerception() {
+        return this.agentSystem.togglePerception();
+    }
+    
+    // Toggle decision icon visibility
+    toggleDecisionIcons() {
+        return this.agentSystem.toggleDecisionIcons();
     }
     
     // Add debug information for overlay

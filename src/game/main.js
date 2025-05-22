@@ -201,6 +201,24 @@ window.addEventListener('keydown', e => {
         if (engine.worldSystem) {
             engine.worldSystem.createDeathEffect(mouse.worldX, mouse.worldY, 2);
         }
+    } else if (e.key === 'l') {
+        // 'l' key - Toggle LLM control for agents
+        if (engine.worldSystem) {
+            const llmEnabled = engine.worldSystem.toggleLLMControl();
+            console.log(`LLM control ${llmEnabled ? 'enabled' : 'disabled'}`);
+        }
+    } else if (e.key === 'v') {
+        // 'v' key - Toggle agent perception visualization
+        if (engine.worldSystem) {
+            const perceptionVisible = engine.worldSystem.togglePerception();
+            console.log(`Agent perception visualization ${perceptionVisible ? 'enabled' : 'disabled'}`);
+        }
+    } else if (e.key === 'i') {
+        // 'i' key - Toggle agent decision icons
+        if (engine.worldSystem) {
+            const iconsVisible = engine.worldSystem.toggleDecisionIcons();
+            console.log(`Decision icons ${iconsVisible ? 'visible' : 'hidden'}`);
+        }
     }
 });
 
@@ -381,7 +399,12 @@ instructionsElement.innerHTML = `
         P key: Toggle combat system<br>
         H key: Test hit effect at cursor<br>
         K key: Test death effect at cursor<br>
-        R key: Reset game (when game over)
+        R key: Reset game (when game over)<br>
+        <br>
+        LLM Controls:<br>
+        L key: Toggle LLM control for agents<br>
+        V key: Toggle agent vision cones<br>
+        I key: Toggle decision icons
     </div>
 `;
 debugOverlay.appendChild(instructionsElement);

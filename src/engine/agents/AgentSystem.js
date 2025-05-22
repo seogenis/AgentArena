@@ -1,4 +1,7 @@
 import { Agent } from './Agent.js';
+import { ObservabilitySystem } from '../llm/ObservabilitySystem.js';
+import { DecisionSystem } from '../llm/DecisionSystem.js';
+import { ActionExecutor } from '../llm/ActionExecutor.js';
 
 export class AgentSystem {
     constructor(hexGrid, renderSystem, baseSystem, collisionSystem) {
@@ -11,6 +14,17 @@ export class AgentSystem {
         this.combatRange = 120; // How far agents can detect enemies
         this.combatEnabled = true; // Allow toggling combat for testing
         this.healingRange = 60; // How close to base for healing
+        
+        // LLM decision making systems
+        this.observabilitySystem = null; // Initialized by WorldSystem
+        this.decisionSystem = new DecisionSystem();
+        this.actionExecutor = null; // Initialized by WorldSystem
+        
+        // Configuration
+        this.useLLMControl = true; // Toggle for LLM-based decision making
+        this.decisionInterval = 2000; // Time between LLM decisions (ms)
+        this.lastDecisionTime = 0;
+        this.showPerception = false; // Toggle for perception visualization
     }
 
     initialize() {
@@ -47,6 +61,9 @@ export class AgentSystem {
             type
         );
         
+        // Set LLM control status
+        agent.useLLM = this.useLLMControl;
+        
         // Add to agent list
         this.agents.push(agent);
         
@@ -76,6 +93,8 @@ export class AgentSystem {
     }
 
     update(deltaTime) {
+        const timestamp = Date.now();
+        
         // Update all agents and process dead agents
         for (let i = this.agents.length - 1; i >= 0; i--) {
             const agent = this.agents[i];
@@ -90,7 +109,12 @@ export class AgentSystem {
                 continue;
             }
             
-            // Update agent
+            // Update agent using LLM decisions if enabled
+            if (this.useLLMControl && agent.useLLM && this.observabilitySystem && this.actionExecutor) {
+                this.updateAgentWithLLM(agent, deltaTime, timestamp);
+            }
+            
+            // Standard update for agent physics and visuals
             agent.update(deltaTime, this.hexGrid);
             
             // Handle resource collection
@@ -103,6 +127,21 @@ export class AgentSystem {
             if (this.combatEnabled) {
                 this.processCombat(agent, deltaTime);
             }
+        }
+        
+        // Process team-wide operations
+        if (this.observabilitySystem) {
+            // Share information between agents
+            this.observabilitySystem.shareInformation(timestamp);
+            
+            // Apply memory decay
+            this.observabilitySystem.applyMemoryDecay(timestamp);
+        }
+        
+        // Make LLM decisions for all agents periodically
+        if (this.useLLMControl && timestamp - this.lastDecisionTime > this.decisionInterval) {
+            this.makeLLMDecisions(timestamp);
+            this.lastDecisionTime = timestamp;
         }
     }
     
@@ -264,5 +303,93 @@ export class AgentSystem {
                 }
             }
         }
+    }
+    
+    // Initialize the LLM components
+    initializeLLMComponents(worldSystem) {
+        this.observabilitySystem = new ObservabilitySystem(worldSystem);
+        this.actionExecutor = new ActionExecutor(worldSystem);
+        this.decisionSystem.setWorldSystem(worldSystem);
+    }
+    
+    // Update agent using LLM decision making
+    async updateAgentWithLLM(agent, deltaTime, timestamp) {
+        // Skip if missing required components
+        if (!this.observabilitySystem || !this.decisionSystem || !this.actionExecutor) {
+            return;
+        }
+        
+        // Get agent's perception of the environment
+        const perception = this.observabilitySystem.observeEnvironment(agent, timestamp);
+        if (!perception) return;
+        
+        // Check if we need a new decision
+        const memory = this.decisionSystem.getAgentMemory(agent);
+        const needsNewDecision = !agent.currentDecision || 
+                               (timestamp - memory.lastDecisionTime) > this.decisionInterval;
+        
+        if (needsNewDecision) {
+            // Get a decision from the LLM
+            const decision = await this.decisionSystem.getDecision(agent, perception, timestamp);
+            
+            // Set the agent's decision
+            agent.setDecision(decision);
+            
+            // Execute the decision
+            this.actionExecutor.executeDecision(agent, decision, perception);
+        }
+    }
+    
+    // Make LLM decisions for all agents
+    async makeLLMDecisions(timestamp) {
+        // Skip if not using LLM control
+        if (!this.useLLMControl || !this.observabilitySystem || !this.decisionSystem) {
+            return;
+        }
+        
+        // Process each agent
+        for (const agent of this.agents) {
+            if (agent.useLLM) {
+                // Get perception
+                const perception = this.observabilitySystem.observeEnvironment(agent, timestamp);
+                if (!perception) continue;
+                
+                // Get decision
+                const decision = await this.decisionSystem.getDecision(agent, perception, timestamp);
+                
+                // Set and execute decision
+                agent.setDecision(decision);
+                this.actionExecutor.executeDecision(agent, decision, perception);
+            }
+        }
+    }
+    
+    // Toggle LLM control for all agents
+    toggleLLMControl() {
+        this.useLLMControl = !this.useLLMControl;
+        
+        // Update all agents
+        for (const agent of this.agents) {
+            agent.useLLM = this.useLLMControl;
+        }
+        
+        return this.useLLMControl;
+    }
+    
+    // Toggle agent perception visualization
+    togglePerception() {
+        if (this.observabilitySystem) {
+            this.showPerception = this.observabilitySystem.toggleVisionCones();
+        }
+        return this.showPerception;
+    }
+    
+    // Toggle decision icon visibility for all agents
+    toggleDecisionIcons() {
+        let visible = false;
+        for (const agent of this.agents) {
+            visible = agent.toggleDecisionIcon();
+        }
+        return visible;
     }
 }

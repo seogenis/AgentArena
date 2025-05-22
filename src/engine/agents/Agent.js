@@ -1,6 +1,19 @@
 import { Circle } from '../shapes/Circle.js';
 import { Rectangle } from '../shapes/Rectangle.js';
 
+// Visual representation constants for agent decisions
+const ACTION_ICONS = {
+    'EXPLORE': '🔍',
+    'COLLECT': '📥',
+    'RETURN_TO_BASE': '🏠',
+    'ATTACK': '⚔️',
+    'FLEE': '💨',
+    'CLAIM_TERRITORY': '🏁',
+    'SCOUT_ENEMY': '👁️',
+    'DEFEND': '🛡️',
+    'HEAL': '❤️'
+};
+
 export class Agent {
     constructor(id, x, y, teamId, type = 'collector') {
         this.id = id;
@@ -70,12 +83,23 @@ export class Agent {
         this.patternDuration = type === 'collector' ? 
             15 + Math.random() * 10 : // Collectors stay on task longer
             8 + Math.random() * 7;    // Explorers change more frequently
+            
+        // LLM decision making properties
+        this.useLLM = true; // Flag to enable/disable LLM control
+        this.currentDecision = null; // Current LLM decision
+        this.decisionIcon = null; // Visual indicator of current decision
+        this.showDecisionIcon = true; // Toggle for showing decision indicators
         
         // Set up initial waypoints based on pattern
         this.setupPattern();
     }
     
     setupPattern() {
+        // If using LLM control, don't override with hardcoded patterns
+        if (this.useLLM && this.currentDecision) {
+            return;
+        }
+        
         // Clear current waypoints
         this.waypoints = [];
         this.waypointIndex = 0;
@@ -208,17 +232,22 @@ export class Agent {
             // Update agent movement and behavior
             this.updateMovement(deltaTime, hexGrid);
             
-            // Update pattern if needed
-            this.patternUpdateTime += deltaTime;
-            if (this.patternUpdateTime >= this.patternDuration) {
-                this.patternUpdateTime = 0;
-                this.currentPattern = (this.currentPattern + 1) % this.movementPatterns.length;
-                this.setupPattern();
+            // If not using LLM, update pattern if needed
+            if (!this.useLLM) {
+                this.patternUpdateTime += deltaTime;
+                if (this.patternUpdateTime >= this.patternDuration) {
+                    this.patternUpdateTime = 0;
+                    this.currentPattern = (this.currentPattern + 1) % this.movementPatterns.length;
+                    this.setupPattern();
+                }
             }
         } else if (this.target) {
             // Move toward target if engaged in combat
             this.moveTowardTarget(deltaTime, hexGrid);
         }
+        
+        // Update decision icon if needed
+        this.updateDecisionIcon();
     }
     
     updateMovement(deltaTime, hexGrid) {
@@ -351,6 +380,9 @@ export class Agent {
         // Draw health bar
         this.renderHealthBar(ctx);
         
+        // Draw decision icon
+        this.renderDecisionIcon(ctx);
+        
         // Draw attack line if attacking
         if (this.isAttacking && this.target && this.attackCooldown <= 0.2) {
             this.renderAttackLine(ctx);
@@ -411,6 +443,9 @@ export class Agent {
         // Draw health bar
         this.renderHealthBar(ctx);
         
+        // Draw decision icon
+        this.renderDecisionIcon(ctx);
+        
         // Draw attack line if attacking
         if (this.isAttacking && this.target && this.attackCooldown <= 0.2) {
             this.renderAttackLine(ctx);
@@ -460,6 +495,32 @@ export class Agent {
         ctx.strokeStyle = this.teamId === 1 ? 'rgba(255, 0, 0, 0.7)' : 'rgba(0, 0, 255, 0.7)';
         ctx.lineWidth = 2;
         ctx.stroke();
+    }
+    
+    // Render decision icon above agent
+    renderDecisionIcon(ctx) {
+        if (!this.decisionIcon || !this.showDecisionIcon) return;
+        
+        // Draw decision icon above health bar
+        ctx.font = '12px Arial';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.fillText(
+            this.decisionIcon,
+            this.x,
+            this.y - this.radius - 15
+        );
+    }
+    
+    // Update decision icon based on current decision
+    updateDecisionIcon() {
+        if (!this.currentDecision || !this.showDecisionIcon) {
+            this.decisionIcon = null;
+            return;
+        }
+        
+        // Update icon based on action type
+        this.decisionIcon = ACTION_ICONS[this.currentDecision.action] || '❓';
     }
     
     takeDamage(amount) {
@@ -539,5 +600,17 @@ export class Agent {
     
     isDead() {
         return this.health <= 0;
+    }
+    
+    // Set the agent's current decision from LLM
+    setDecision(decision) {
+        this.currentDecision = decision;
+        this.updateDecisionIcon();
+    }
+    
+    // Toggle decision icon visibility
+    toggleDecisionIcon() {
+        this.showDecisionIcon = !this.showDecisionIcon;
+        return this.showDecisionIcon;
     }
 }
