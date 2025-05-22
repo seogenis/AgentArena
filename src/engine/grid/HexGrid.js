@@ -94,17 +94,20 @@ export class HexGrid {
     
     renderControlOverlay(ctx, cell) {
         const control = cell.controlLevel;
+        const absControl = Math.abs(control);
         
         // Determine color based on control level
-        let color;
+        let color, borderColor;
         if (control < 0) {
             // Team 1 (Red)
-            const alpha = Math.min(Math.abs(control) * 0.7, 0.7); // Max 70% opacity
+            const alpha = Math.min(absControl * 0.7, 0.7); // Max 70% opacity
             color = `rgba(255, 0, 0, ${alpha})`;
+            borderColor = `rgba(200, 0, 0, ${alpha + 0.1})`;
         } else {
             // Team 2 (Blue)
-            const alpha = Math.min(control * 0.7, 0.7); // Max 70% opacity
+            const alpha = Math.min(absControl * 0.7, 0.7); // Max 70% opacity
             color = `rgba(0, 0, 255, ${alpha})`;
+            borderColor = `rgba(0, 0, 200, ${alpha + 0.1})`;
         }
         
         // Draw filled hex with team color
@@ -116,6 +119,30 @@ export class HexGrid {
         }
         ctx.closePath();
         ctx.fill();
+        
+        // Add stronger border for highly controlled territories
+        if (absControl > 0.7) {
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Add pulsing effect for recently captured territories (simulated by random)
+            if (Math.random() < 0.05) {
+                ctx.strokeStyle = control < 0 ? 'rgba(255, 100, 100, 0.6)' : 'rgba(100, 100, 255, 0.6)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+        
+        // Add territory pattern for strong control (> 0.8)
+        if (absControl > 0.8) {
+            const pattern = control < 0 ? '×' : '⬢';
+            ctx.fillStyle = control < 0 ? 'rgba(255, 200, 200, 0.4)' : 'rgba(200, 200, 255, 0.4)';
+            ctx.font = '8px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(pattern, cell.x, cell.y);
+        }
     }
     
     renderObstacle(ctx, cell) {

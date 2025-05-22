@@ -1,4 +1,5 @@
 import { Circle } from '../shapes/Circle.js';
+import { Rectangle } from '../shapes/Rectangle.js';
 
 export class Agent {
     constructor(id, x, y, teamId, type = 'collector') {
@@ -19,9 +20,19 @@ export class Agent {
         
         // Agent stats
         this.health = 100;
+        this.maxHealth = 100;
         this.attackPower = type === 'collector' ? 5 : 15;
         this.defense = type === 'collector' ? 10 : 5;
         this.visionRange = type === 'collector' ? 120 : 180;
+        
+        // Combat state
+        this.isAttacking = false;
+        this.target = null;
+        this.attackCooldown = 0;
+        this.attackCooldownMax = 1.0; // 1 second between attacks
+        this.damageFlashTime = 0;
+        this.isHealing = false;
+        this.healCooldown = 0;
         
         // Resource carrying
         this.capacity = type === 'collector' ? 5 : 2;
@@ -171,15 +182,42 @@ export class Agent {
     }
     
     update(deltaTime, hexGrid) {
-        // Update agent movement and behavior
-        this.updateMovement(deltaTime, hexGrid);
+        // Update combat cooldowns
+        if (this.attackCooldown > 0) {
+            this.attackCooldown -= deltaTime;
+        }
         
-        // Update pattern if needed
-        this.patternUpdateTime += deltaTime;
-        if (this.patternUpdateTime >= this.patternDuration) {
-            this.patternUpdateTime = 0;
-            this.currentPattern = (this.currentPattern + 1) % this.movementPatterns.length;
-            this.setupPattern();
+        if (this.damageFlashTime > 0) {
+            this.damageFlashTime -= deltaTime;
+        }
+        
+        // Handle healing when at base
+        if (this.isHealing) {
+            this.healCooldown -= deltaTime;
+            if (this.healCooldown <= 0) {
+                this.health = Math.min(this.maxHealth, this.health + 5);
+                this.healCooldown = 0.5; // Heal every half second
+            }
+        }
+        
+        // Update visuals based on current state
+        this.updateVisuals();
+        
+        // Only move if not engaged in combat
+        if (!this.isAttacking || !this.target) {
+            // Update agent movement and behavior
+            this.updateMovement(deltaTime, hexGrid);
+            
+            // Update pattern if needed
+            this.patternUpdateTime += deltaTime;
+            if (this.patternUpdateTime >= this.patternDuration) {
+                this.patternUpdateTime = 0;
+                this.currentPattern = (this.currentPattern + 1) % this.movementPatterns.length;
+                this.setupPattern();
+            }
+        } else if (this.target) {
+            // Move toward target if engaged in combat
+            this.moveTowardTarget(deltaTime, hexGrid);
         }
     }
     
@@ -237,16 +275,28 @@ export class Agent {
     
     canMoveTo(x, y, hexGrid) {
         // Check if the target position has an obstacle
+        // Make sure hexGrid exists before calling getCellAtPosition
+        if (!hexGrid) return true;
+        
         const cell = hexGrid.getCellAtPosition(x, y);
         return cell && !cell.hasObstacle;
     }
     
     updateVisuals() {
-        // Update visual representation based on carrying resources
+        // Update visual representation based on carrying resources and health
         if (this.resourceAmount > 0) {
             this.radius = this.baseRadius * 1.3; // Bigger when carrying resources
         } else {
             this.radius = this.baseRadius;
+        }
+        
+        // Set color based on health
+        if (this.teamId === 1) { // Red team
+            const healthPercent = this.health / this.maxHealth;
+            this.color = healthPercent > 0.5 ? '#ff3333' : '#aa2222';
+        } else { // Blue team
+            const healthPercent = this.health / this.maxHealth;
+            this.color = healthPercent > 0.5 ? '#3333ff' : '#2222aa';
         }
     }
     
@@ -282,9 +332,14 @@ export class Agent {
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fill();
         
-        // Draw outline
-        ctx.strokeStyle = this.outlineColor;
-        ctx.lineWidth = 2;
+        // Draw outline - flash white when taking damage
+        if (this.damageFlashTime > 0) {
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+        } else {
+            ctx.strokeStyle = this.outlineColor;
+            ctx.lineWidth = 2;
+        }
         ctx.stroke();
         
         // Draw team indicator (inner circle)
@@ -292,6 +347,14 @@ export class Agent {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius * 0.6, 0, Math.PI * 2);
         ctx.fill();
+        
+        // Draw health bar
+        this.renderHealthBar(ctx);
+        
+        // Draw attack line if attacking
+        if (this.isAttacking && this.target && this.attackCooldown <= 0.2) {
+            this.renderAttackLine(ctx);
+        }
     }
     
     renderExplorer(ctx) {
@@ -326,9 +389,14 @@ export class Agent {
         ctx.closePath();
         ctx.fill();
         
-        // Draw outline
-        ctx.strokeStyle = this.outlineColor;
-        ctx.lineWidth = 2;
+        // Draw outline - flash white when taking damage
+        if (this.damageFlashTime > 0) {
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+        } else {
+            ctx.strokeStyle = this.outlineColor;
+            ctx.lineWidth = 2;
+        }
         ctx.stroke();
         
         // Draw team indicator (inner shape)
@@ -339,5 +407,137 @@ export class Agent {
         ctx.beginPath();
         ctx.arc(centerX, centerY, this.radius * 0.4, 0, Math.PI * 2);
         ctx.fill();
+        
+        // Draw health bar
+        this.renderHealthBar(ctx);
+        
+        // Draw attack line if attacking
+        if (this.isAttacking && this.target && this.attackCooldown <= 0.2) {
+            this.renderAttackLine(ctx);
+        }
+    }
+    
+    // Add new methods for combat
+    
+    renderHealthBar(ctx) {
+        // Draw health bar above agent
+        const healthBarWidth = this.radius * 2;
+        const healthBarHeight = 3;
+        const healthPercentage = this.health / this.maxHealth;
+        
+        // Background (gray)
+        ctx.fillStyle = '#444444';
+        ctx.fillRect(
+            this.x - healthBarWidth / 2,
+            this.y - this.radius - 8,
+            healthBarWidth,
+            healthBarHeight
+        );
+        
+        // Health (gradient from red to green based on health)
+        const healthColor = this.teamId === 1 ? 
+            `rgba(255, ${Math.floor(healthPercentage * 255)}, 0, 0.9)` : 
+            `rgba(0, ${Math.floor(healthPercentage * 255)}, 255, 0.9)`;
+            
+        ctx.fillStyle = healthColor;
+        ctx.fillRect(
+            this.x - healthBarWidth / 2,
+            this.y - this.radius - 8,
+            healthBarWidth * healthPercentage,
+            healthBarHeight
+        );
+    }
+    
+    renderAttackLine(ctx) {
+        if (!this.target) return;
+        
+        // Draw attack line to target
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.target.x, this.target.y);
+        
+        // Set color based on team
+        ctx.strokeStyle = this.teamId === 1 ? 'rgba(255, 0, 0, 0.7)' : 'rgba(0, 0, 255, 0.7)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+    
+    takeDamage(amount) {
+        // Calculate actual damage based on defense
+        const actualDamage = Math.max(1, amount - this.defense/5);
+        this.health -= actualDamage;
+        
+        // Visual effect for damage
+        this.damageFlashTime = 0.2; // Flash for 0.2 seconds
+        
+        // Update visuals
+        this.updateVisuals();
+        
+        return actualDamage;
+    }
+    
+    attack(target) {
+        if (!target || this.attackCooldown > 0) return 0;
+        
+        // Reset cooldown
+        this.attackCooldown = this.attackCooldownMax;
+        
+        // Calculate damage
+        const damageDealt = target.takeDamage(this.attackPower);
+        
+        return damageDealt;
+    }
+    
+    moveTowardTarget(deltaTime, hexGrid) {
+        if (!this.target) return;
+        
+        // Calculate direction to target
+        const dx = this.target.x - this.x;
+        const dy = this.target.y - this.y;
+        const distanceToTarget = Math.sqrt(dx * dx + dy * dy);
+        
+        // If within attack range, stop moving
+        const attackRange = this.radius + this.target.radius + 5;
+        if (distanceToTarget <= attackRange) {
+            return; // Close enough to attack
+        }
+        
+        // Move toward target
+        const moveDistance = this.speed * deltaTime;
+        const moveRatio = Math.min(moveDistance / distanceToTarget, 1.0);
+        
+        const newX = this.x + dx * moveRatio;
+        const newY = this.y + dy * moveRatio;
+        
+        // Check for collisions
+        if (this.canMoveTo(newX, newY, hexGrid)) {
+            this.x = newX;
+            this.y = newY;
+        }
+    }
+    
+    startAttacking(target) {
+        if (target && target.teamId !== this.teamId) {
+            this.isAttacking = true;
+            this.target = target;
+        }
+    }
+    
+    stopAttacking() {
+        this.isAttacking = false;
+        this.target = null;
+    }
+    
+    startHealing() {
+        this.isHealing = true;
+        this.healCooldown = 0;
+    }
+    
+    stopHealing() {
+        this.isHealing = false;
+    }
+    
+    isDead() {
+        return this.health <= 0;
     }
 }

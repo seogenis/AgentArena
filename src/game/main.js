@@ -146,11 +146,16 @@ window.addEventListener('keydown', e => {
             engine.worldSystem.collectResourceAt(mouse.worldX, mouse.worldY);
             updateWorldInfo();
         }
-    } else if (e.key === 'r' || e.key === 'a') {
-        // 'r', 'a' keys - Create red team collector agent
+    } else if (e.key === 'r') {
+        // 'r' key - Reset game if game over, otherwise create red team agent
         if (engine.worldSystem) {
-            engine.worldSystem.createAgent(1, 'collector');
-            updateWorldInfo();
+            if (engine.worldSystem.gameOver) {
+                engine.worldSystem.resetGame();
+                updateWorldInfo();
+            } else {
+                engine.worldSystem.createAgent(1, 'collector');
+                updateWorldInfo();
+            }
         }
     } else if (e.key === 'z') {
         // 'z' key - Create red team explorer agent
@@ -179,6 +184,22 @@ window.addEventListener('keydown', e => {
                 cameraTarget = agents[Math.floor(Math.random() * agents.length)];
                 engine.cameraSystem.setTarget(cameraTarget);
             }
+        }
+    } else if (e.key === 'p') {
+        // 'p' key - Toggle combat system
+        if (engine.worldSystem) {
+            const combatEnabled = engine.worldSystem.toggleCombat();
+            console.log(`Combat system ${combatEnabled ? 'enabled' : 'disabled'}`);
+        }
+    } else if (e.key === 'h') {
+        // 'h' key - Create hit effect for testing
+        if (engine.worldSystem) {
+            engine.worldSystem.createHitEffect(mouse.worldX, mouse.worldY, 1);
+        }
+    } else if (e.key === 'k') {
+        // 'k' key - Create death effect for testing
+        if (engine.worldSystem) {
+            engine.worldSystem.createDeathEffect(mouse.worldX, mouse.worldY, 2);
         }
     }
 });
@@ -351,16 +372,31 @@ instructionsElement.innerHTML = `
         C key: Collect resource at cursor<br>
         <br>
         Agents:<br>
-        A key: Add Red collector agent<br>
+        R key: Add Red collector agent<br>
         Z key: Add Red explorer agent<br>
         S key: Add Blue collector agent<br>
-        X key: Add Blue explorer agent
+        X key: Add Blue explorer agent<br>
+        <br>
+        Game Mechanics:<br>
+        P key: Toggle combat system<br>
+        H key: Test hit effect at cursor<br>
+        K key: Test death effect at cursor<br>
+        R key: Reset game (when game over)
     </div>
 `;
 debugOverlay.appendChild(instructionsElement);
 
 // Update world info initially
 updateWorldInfo();
+
+// Add interface methods to be used by combat system
+worldSystem.agentSystem.createHitEffect = function(x, y, teamId) {
+    worldSystem.createHitEffect(x, y, teamId);
+};
+
+worldSystem.agentSystem.createDeathEffect = function(x, y, teamId) {
+    worldSystem.createDeathEffect(x, y, teamId);
+};
 
 // Start the game
 engine.start();

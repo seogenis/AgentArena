@@ -3,15 +3,15 @@
 ## Project Overview
 Building a browser-based strategic game where LLM-powered teams create and control AI agents competing for resources and territory.
 
-## Current Implementation Stage: Stage 3 - Base Camps and Hardcoded Agents
+## Current Implementation Stage: Stage 4 - Game Mechanics
 Status: Completed ✅
 
 ## Current Todo List:
-- [x] Create base camp visual designs for each team
-- [x] Implement agent entities with basic attributes
-- [x] Add agent movement and control systems
-- [x] Implement resource collection mechanics
-- [x] Create team-based agent visuals
+- [x] Implement agent-to-agent interactions
+- [x] Add combat mechanics between agents
+- [x] Enhance resource collection to affect agent attributes
+- [x] Implement team-based resource allocation
+- [x] Add victory condition checks
 
 ## Completed:
 - [x] Set up project repository
@@ -35,16 +35,16 @@ Status: Completed ✅
 - Run tests: [TBD]
 
 ## Testing Results:
-- Base rendering: ✅ Pass - Team bases appear correctly in opposite corners
-- Agent appearance: ✅ Pass - Agents have distinct team colors and resource indicators
-- Movement patterns: ✅ Pass - Agents move smoothly using predefined patterns
-- Collision detection: ✅ Pass - Agents properly avoid obstacles
-- Resource collection: ✅ Pass - Agents can collect and deliver resources to bases
-- Territory control: ✅ Pass - Agent presence affects territory control
-- Visual clarity test: ✅ Pass - All game elements are visually distinct
-- Console error check: ✅ Pass - No errors during operation
-- Game loop timing tests: ✅ Pass - Stable FPS (60+)
-- Browser compatibility: ✅ Pass - Tested in Chrome
+- Combat mechanics: ✅ Pass - Agents engage in combat when encountering enemies
+- Resource collection: ✅ Pass - Resources properly affect agent attributes
+- Agent healing: ✅ Pass - Agents heal when near their base
+- Combat visuals: ✅ Pass - Combat effects visible with appropriate team colors
+- Victory conditions: ✅ Pass - Game declares winner when conditions are met
+- Resource dropping: ✅ Pass - Dead agents drop resources they were carrying
+- Visual feedback: ✅ Pass - Health bars and combat indicators are clear
+- Territory control: ✅ Pass - Territory control properly influences victory condition
+- Game reset: ✅ Pass - Game can be restarted after victory
+- Combat toggle: ✅ Pass - Combat can be toggled on/off for testing
 
 ## Testing Instructions:
 1. Run the game with `npm start`
@@ -60,58 +60,71 @@ Status: Completed ✅
    - Left-click to add Red team control to a cell
    - Right-click to add Blue team control to a cell
    - Press R to create a Red team agent
-   - Press B to create a Blue team agent
-7. Test resource interactions:
+   - Press Z to create a Red team explorer agent
+   - Press S to create a Blue team collector agent
+   - Press X to create a Blue team explorer agent
+7. Test combat system:
+   - Press P to toggle combat on/off
+   - Press H to test hit effect at cursor position
+   - Press K to test death effect at cursor position
+   - Create agents from both teams and observe them engage in combat
+   - Observe health bars and attack indicators
+8. Test resource interactions:
    - Press 1, 2, or 3 to add different resources (Energy, Materials, Data)
    - Press C to collect a resource manually
    - Observe agents collecting resources and returning to their bases
-8. Test obstacle placement:
-   - Press O to add an obstacle at cursor position
-   - Observe agents avoiding obstacles
-9. Verify info panel shows updated resource counts, territory control, and agent counts
+   - Kill an agent carrying resources to see resources drop
+9. Test victory conditions:
+   - Control 75% of territory to trigger territory control victory
+   - Eliminate all agents of one team to trigger elimination victory
+   - Accumulate 10x the resources of the opponent to trigger resource victory
+   - Press R when game is over to restart the game
 10. For debugging or documentation:
    - Run `npm run screenshot` to capture the current game state
    - Check the debug-screenshot.png file in the project root
    - It is okay if things don't work or you don't know if test / screenshot worked, just make sure to inform the user
 
 ## Issues and Solutions:
-- Fixed game loop context binding issue that was causing "Cannot read properties of undefined (reading 'isRunning')" error
-- Solution: Properly bound the gameLoop function to the engine instance with .bind(this)
-- Enhanced debug overlay to show team resources and agent counts
+- Fixed combat effect visualization issue
+- Solution: Created a dedicated CombatSystem class to handle visual effects
+- Added game reset functionality to restart after a victory
+- Improved combat targeting to prefer enemies without resources
+- Enhanced territory influence to affect victory conditions
 
-## Stage 3 Implementation Notes:
-- Created BaseSystem with visually distinct team bases at opposite corners
-- Implemented Agent class with team-specific colors and appearances
-- Added AgentSystem to manage agent creation, movement, and resource collection
-- Created three different movement patterns for agents (patrol, circle, resource)
-- Implemented collision detection to avoid obstacles
-- Added resource collection and delivery mechanics
-- Created territory influence system based on agent presence
-- Enhanced debug overlay with team resources and agent information
-- Added keyboard shortcuts to create new agents and follow agent movement
+## Stage 4 Implementation Notes:
+- Implemented CombatSystem with visual hit and death effects
+- Added agent health bars and damage visualization
+- Created combat mechanics with attack and defense stats
+- Implemented resource dropping when agents die
+- Added healing mechanics when agents are near their base
+- Created three victory conditions: territory control, agent elimination, and resource domination
+- Added game over state with winner declaration
+- Created reset functionality to restart the game
+- Implemented combat toggling for testing
+- Enhanced keyboard controls to interact with new features
 
 ## Next Stage Preparation:
-- [x] Design agent movement system
-- [x] Plan resource collection mechanics
-- [x] Design base camp visual structures
-- [x] Implement agent-territory influence system
+- [ ] Design LLM prompt templates for agent control
+- [ ] Plan agent observation and decision-making system
+- [ ] Design LLM integration architecture
+- [ ] Create basic API integration for LLM access
 
-## Next Stage: Stage 4 - Agent Interactions and Game Mechanics
+## Next Stage: Stage 5 - LLM Agent Piloting
 Status: Not Started
 
-## Todo List for Stage 4:
-- [ ] Implement agent-to-agent interactions
-- [ ] Add combat mechanics between agents
-- [ ] Enhance resource collection to affect agent attributes
-- [ ] Implement team-based resource allocation
-- [ ] Add victory condition checks
+## Todo List for Stage 5:
+- [ ] Implement LLM-based agent decision making
+- [ ] Create agent observation system
+- [ ] Design and implement agent memory
+- [ ] Add communication between agents
+- [ ] Develop agent personality traits
 
 ## Stage Progression
 - ✅ Stage 1: Basic Rendering in 2D Game Window
 - ✅ Stage 2: Game World Design with Resources
 - ✅ Stage 3: Base Camps and Hardcoded Agents
-- 🔄 Stage 4: Agent Interactions and Game Mechanics
-- ⏱️ Stage 5: LLM Agent Piloting
+- ✅ Stage 4: Agent Interactions and Game Mechanics
+- 🔄 Stage 5: LLM Agent Piloting
 - ⏱️ Stage 6: LLM Team Spawner Implementation
 - ⏱️ Final Stage: Polish and Refinement
 
