@@ -1,12 +1,16 @@
 import { Agent } from './Agent.js';
 
 export class AgentSystem {
-    constructor(hexGrid, renderSystem, baseSystem) {
+    constructor(hexGrid, renderSystem, baseSystem, collisionSystem) {
         this.hexGrid = hexGrid;
         this.renderSystem = renderSystem;
         this.baseSystem = baseSystem;
+        this.collisionSystem = collisionSystem;
         this.agents = [];
         this.agentIdCounter = 0;
+        this.combatRange = 120; // How far agents can detect enemies
+        this.combatEnabled = true; // Allow toggling combat for testing
+        this.healingRange = 60; // How close to base for healing
     }
 
     initialize() {
@@ -72,8 +76,21 @@ export class AgentSystem {
     }
 
     update(deltaTime) {
-        // Update all agents
-        for (const agent of this.agents) {
+        // Update all agents and process dead agents
+        for (let i = this.agents.length - 1; i >= 0; i--) {
+            const agent = this.agents[i];
+            
+            // Check for dead agents
+            if (agent.isDead()) {
+                // Drop resources if carrying any
+                this.dropResources(agent);
+                
+                // Remove the agent
+                this.removeAgent(agent);
+                continue;
+            }
+            
+            // Update agent
             agent.update(deltaTime, this.hexGrid);
             
             // Handle resource collection
@@ -81,6 +98,95 @@ export class AgentSystem {
             
             // Handle base visits
             this.processBaseVisit(agent);
+            
+            // Handle combat if enabled
+            if (this.combatEnabled) {
+                this.processCombat(agent, deltaTime);
+            }
+        }
+    }
+    
+    processCombat(agent, deltaTime) {
+        // Skip if agent is already attacking
+        if (agent.isAttacking && agent.target) {
+            // Check if target is still alive
+            if (agent.target.isDead() || !this.agents.includes(agent.target)) {
+                agent.stopAttacking();
+            } 
+            // Check if target is in range
+            else {
+                const dx = agent.target.x - agent.x;
+                const dy = agent.target.y - agent.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // If in attack range, attack the target
+                if (distance <= agent.radius + agent.target.radius + 10) {
+                    const damage = agent.attack(agent.target);
+                    
+                    // Create hit effect if damage was dealt
+                    if (damage > 0) {
+                        // We need to access the combat system through the parent worldSystem
+                        // This is handled in the WorldSystem via proxy methods
+                        const midpointX = (agent.x + agent.target.x) / 2;
+                        const midpointY = (agent.y + agent.target.y) / 2;
+                        
+                        // Create hit effect
+                        if (typeof this.createHitEffect === 'function') {
+                            this.createHitEffect(midpointX, midpointY, agent.teamId);
+                        }
+                        
+                        // Check if target is dead
+                        if (agent.target.isDead()) {
+                            // Create death effect
+                            if (typeof this.createDeathEffect === 'function') {
+                                this.createDeathEffect(agent.target.x, agent.target.y, agent.target.teamId);
+                            }
+                            
+                            // Stop attacking and clear target
+                            agent.stopAttacking();
+                        }
+                    }
+                }
+            }
+            
+            return; // Skip rest of combat processing
+        }
+        
+        // Look for enemies in range
+        for (const otherAgent of this.agents) {
+            // Skip self and same team
+            if (otherAgent === agent || otherAgent.teamId === agent.teamId) continue;
+            
+            // Calculate distance
+            const dx = otherAgent.x - agent.x;
+            const dy = otherAgent.y - agent.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // If enemy is in combat range
+            if (distance <= this.combatRange) {
+                // Collectors are less likely to engage if carrying resources
+                const shouldEngage = agent.type === 'explorer' || 
+                                    agent.resourceAmount === 0 || 
+                                    Math.random() < 0.3;
+                
+                if (shouldEngage) {
+                    agent.startAttacking(otherAgent);
+                    break; // Only attack one enemy at a time
+                }
+            }
+        }
+    }
+    
+    dropResources(agent) {
+        // If agent was carrying resources, drop them on the current cell
+        if (agent.resourceAmount > 0 && agent.resourceType) {
+            const cell = this.hexGrid.getCellAtPosition(agent.x, agent.y);
+            
+            if (cell) {
+                // Add dropped resources to the cell
+                cell.resourceType = agent.resourceType;
+                cell.resourceAmount = agent.resourceAmount;
+            }
         }
     }
 
@@ -131,6 +237,13 @@ export class AgentSystem {
             
             // Update agent's visual state
             agent.updateVisuals();
+        }
+        
+        // Start healing if close to base and not at full health
+        if (distToBase < this.healingRange && agent.health < agent.maxHealth) {
+            agent.startHealing();
+        } else {
+            agent.stopHealing();
         }
     }
 
