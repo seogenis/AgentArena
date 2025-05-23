@@ -27,3 +27,6 @@ build/
 
 # Coverage reports
 coverage/
+
+# Debug files
+debug-screenshot.png

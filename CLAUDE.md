@@ -3,15 +3,18 @@
 ## Project Overview
 Building a browser-based strategic game where LLM-powered teams create and control AI agents competing for resources and territory.
 
-## Current Implementation Stage: Stage 4 - Game Mechanics
+## Current Implementation Stage: Stage 5 - LLM Team Spawners
 Status: Completed ✅
 
 ## Current Todo List:
-- [x] Implement agent-to-agent interactions
-- [x] Add combat mechanics between agents
-- [x] Enhance resource collection to affect agent attributes
-- [x] Implement team-based resource allocation
-- [x] Add victory condition checks
+- [x] Set up LLM API integration
+- [x] Design team strategy prompt templates
+- [x] Implement team-level LLM integration
+- [x] Create agent generation system based on LLM specifications
+- [x] Develop resource allocation system for spawning
+- [x] Add agent specialization and role assignment
+- [x] Implement strategic agent deployment
+- [x] Create fallback behaviors for API failures
 
 ## Completed:
 - [x] Set up project repository
@@ -28,6 +31,26 @@ Status: Completed ✅
 - [x] Create resource spawning mechanics
 - [x] Design and implement obstacles
 - [x] Complete Stage 2 - Game World Design
+- [x] Create base camps for each team
+- [x] Implement resource collection and storage
+- [x] Add agent creation and movement
+- [x] Implement territory control mechanics
+- [x] Complete Stage 3 - Base Camps and Agents
+- [x] Implement agent-to-agent interactions
+- [x] Add combat mechanics between agents
+- [x] Enhance resource collection to affect agent attributes
+- [x] Implement team-based resource allocation
+- [x] Add victory condition checks
+- [x] Complete Stage 4 - Game Mechanics
+- [x] Set up LLM API integration with mock mode
+- [x] Design team strategy prompt templates
+- [x] Implement team-level LLM decision making
+- [x] Create agent generation system based on LLM specifications
+- [x] Develop resource allocation system for spawning
+- [x] Add agent specialization and role assignment
+- [x] Implement strategic agent deployment
+- [x] Create fallback behaviors for API failures
+- [x] Complete Stage 5 - LLM Team Spawners
 
 ## Development Commands
 - Run locally: `npm start` (runs on http://localhost:3000)
@@ -45,6 +68,11 @@ Status: Completed ✅
 - Territory control: ✅ Pass - Territory control properly influences victory condition
 - Game reset: ✅ Pass - Game can be restarted after victory
 - Combat toggle: ✅ Pass - Combat can be toggled on/off for testing
+- LLM integration: ✅ Pass - LLM systems can be toggled on/off
+- Team strategy: ✅ Pass - Teams can receive strategies from LLM
+- Agent spawning: ✅ Pass - LLM can create specialized agents
+- Agent behavior: ✅ Pass - Different agent roles follow distinct behaviors
+- Resource priorities: ✅ Pass - Agents respect resource priorities set by LLM
 
 ## Testing Instructions:
 1. Run the game with `npm start`
@@ -79,7 +107,15 @@ Status: Completed ✅
    - Eliminate all agents of one team to trigger elimination victory
    - Accumulate 10x the resources of the opponent to trigger resource victory
    - Press R when game is over to restart the game
-10. For debugging or documentation:
+10. Test LLM features:
+   - Press L to toggle LLM systems on/off
+   - Press G to request a new strategy for Red team
+   - Press B to request a new strategy for Blue team 
+   - Press N to request a new agent for Red team
+   - Press M to request a new agent for Blue team
+   - Observe LLM-generated agents with different shapes and attributes
+   - Compare behavior of different agent types (collector, explorer, defender, attacker)
+11. For debugging or documentation:
    - Run `npm run screenshot` to capture the current game state
    - Check the debug-screenshot.png file in the project root
    - It is okay if things don't work or you don't know if test / screenshot worked, just make sure to inform the user
@@ -90,43 +126,56 @@ Status: Completed ✅
 - Added game reset functionality to restart after a victory
 - Improved combat targeting to prefer enemies without resources
 - Enhanced territory influence to affect victory conditions
+- Handled browser environment limitations for API access
+- Solution: Added mock response system for LLM API calls
+- Fixed team ID inconsistency between numeric (1/2) and string ('red'/'blue') formats
+- Solution: Added conversion methods to handle both formats consistently
+- Created resilient agent pattern selection with fallbacks
+- Solution: Added pattern validation and defaults in agent movement setup
 
-## Stage 4 Implementation Notes:
-- Implemented CombatSystem with visual hit and death effects
-- Added agent health bars and damage visualization
-- Created combat mechanics with attack and defense stats
-- Implemented resource dropping when agents die
-- Added healing mechanics when agents are near their base
-- Created three victory conditions: territory control, agent elimination, and resource domination
-- Added game over state with winner declaration
-- Created reset functionality to restart the game
-- Implemented combat toggling for testing
-- Enhanced keyboard controls to interact with new features
+## Stage 5 Implementation Notes:
+- Implemented LLMService for API communication with fallback behaviors
+- Created PromptTemplates system for team strategy and agent creation
+- Developed TeamStrategySystem for team-level decision making
+- Implemented SpawnerSystem for LLM-based agent creation
+- Added SpawnScheduler to manage agent creation timing
+- Created new agent roles: defender and attacker with specialized behaviors
+- Enhanced Agent class to support LLM-defined attributes and resource priorities
+- Added resource allocation system based on agent specifications
+- Implemented specialized movement patterns for different agent roles
+- Created unique visual representations for different agent types
+- Added keyboard controls for testing LLM features
+- Enhanced debug overlay to show team strategies
+- Set up mock response system for development without API keys
 
 ## Next Stage Preparation:
-- [ ] Design LLM prompt templates for agent control
-- [ ] Plan agent observation and decision-making system
-- [ ] Design LLM integration architecture
-- [ ] Create basic API integration for LLM access
+- [ ] Enhance game visualization to show LLM decisions
+- [ ] Add more complex strategy patterns
+- [ ] Design improved UI for LLM status
+- [ ] Optimize game performance
 
-## Next Stage: Stage 5 - LLM Agent Piloting
+## Next Stage: Final Stage - Polish and Refinement
 Status: Not Started
 
-## Todo List for Stage 5:
-- [ ] Implement LLM-based agent decision making
-- [ ] Create agent observation system
-- [ ] Design and implement agent memory
-- [ ] Add communication between agents
-- [ ] Develop agent personality traits
+## Todo List for Final Stage:
+- [ ] Add visual indicators for LLM decision making
+- [ ] Create better team strategy visualization
+- [ ] Improve the UI for displaying team strategies
+- [ ] Add agent status indicators (role, priority, etc.)
+- [ ] Optimize performance with many agents
+- [ ] Add game balance adjustments
+- [ ] Enhance visual effects
+- [ ] Add sound effects
 
 ## Stage Progression
 - ✅ Stage 1: Basic Rendering in 2D Game Window
 - ✅ Stage 2: Game World Design with Resources
 - ✅ Stage 3: Base Camps and Hardcoded Agents
 - ✅ Stage 4: Agent Interactions and Game Mechanics
-- 🔄 Stage 5: LLM Agent Piloting
-- ⏱️ Stage 6: LLM Team Spawner Implementation
-- ⏱️ Final Stage: Polish and Refinement
+- ✅ Stage 5: LLM Team Spawners
+- 🔄 Final Stage: Polish and Refinement
+
+> **Note**: Stage progression has been revised. Original stages 5 (LLM Agent Piloting) and 6 (LLM Team Spawners) have been consolidated into a single Stage 5 focusing on LLM team spawners. Agent behavior will continue to use hardcoded patterns.
 
 ## Notes for Claude
 - When starting a new stage, update this file with the stage's todo list

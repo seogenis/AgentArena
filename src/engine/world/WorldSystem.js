@@ -5,6 +5,7 @@ import { BaseSystem } from '../bases/BaseSystem.js';
 import { AgentSystem } from '../agents/AgentSystem.js';
 import { CollisionSystem } from '../utils/CollisionSystem.js';
 import { CombatSystem } from '../utils/CombatSystem.js';
+import { TeamStrategySystem, SpawnerSystem, SpawnScheduler } from '../llm/index.js';
 
 export class WorldSystem {
     constructor(width, height, hexSize = 40, renderSystem) {
@@ -32,6 +33,15 @@ export class WorldSystem {
             this.collisionSystem
         );
         this.agentSystem.initialize();
+        
+        // LLM systems - make these accessible to GameEngine
+        window.gameEngine = this; // Make available to other systems
+        this.teamStrategySystem = new TeamStrategySystem(this);
+        this.spawnerSystem = new SpawnerSystem(this);
+        this.spawnScheduler = new SpawnScheduler(this);
+        
+        // Flag to enable/disable LLM spawning
+        this.llmEnabled = true;
         
         // Victory conditions
         this.gameOver = false;
@@ -71,16 +81,29 @@ export class WorldSystem {
         // Update territory control from agent positions
         this.agentSystem.updateTerritoryControl(deltaTime);
         
+        // Update LLM systems if enabled
+        if (this.llmEnabled) {
+            // Update team strategy - determine team-level decisions
+            this.teamStrategySystem.update(deltaTime);
+            
+            // Update spawner - process spawn requests
+            this.spawnerSystem.update(deltaTime);
+            
+            // Update spawn scheduler - determine when to spawn agents
+            this.spawnScheduler.update(deltaTime);
+        }
+        
         // Check victory conditions
         this.checkVictoryConditions(deltaTime);
     }
     
     checkVictoryConditions(deltaTime) {
         // Get current territory control
-        const info = this.getDebugInfo();
-        const totalCells = info.totalCells;
-        const team1Control = info.territory.team1 / totalCells;
-        const team2Control = info.territory.team2 / totalCells;
+        try {
+            const info = this.getDebugInfo();
+            const totalCells = info.totalCells;
+            const team1Control = info.territory.team1 / totalCells;
+            const team2Control = info.territory.team2 / totalCells;
         
         // Check if any team exceeds the threshold
         let potentialWinner = null;
@@ -136,6 +159,9 @@ export class WorldSystem {
             this.gameOver = true;
             this.winner = 2;
             console.log("Team 2 has won by resource domination!");
+        }
+        } catch (error) {
+            console.error("Error checking victory conditions:", error);
         }
     }
     
@@ -267,6 +293,50 @@ export class WorldSystem {
         return this.agentSystem.createAgent(teamId, type);
     }
     
+    // LLM system controls
+    toggleLLM() {
+        this.llmEnabled = !this.llmEnabled;
+        console.log(`LLM systems ${this.llmEnabled ? 'enabled' : 'disabled'}`);
+        return this.llmEnabled;
+    }
+    
+    requestTeamStrategy(teamId) {
+        if (!this.llmEnabled) {
+            console.log('LLM systems are disabled. Enable with toggleLLM()');
+            return null;
+        }
+        this.teamStrategySystem.forceStrategyUpdate(teamId === 'red' ? 'red' : 'blue');
+        return this.teamStrategySystem.getTeamStrategy(teamId === 'red' ? 'red' : 'blue');
+    }
+    
+    requestAgentSpawn(teamId) {
+        if (!this.llmEnabled) {
+            console.log('LLM systems are disabled. Enable with toggleLLM()');
+            return false;
+        }
+        this.spawnScheduler.forceSpawnRequest(teamId === 'red' ? 'red' : 'blue');
+        return true;
+    }
+    
+    getTeamStrategy(teamId) {
+        return this.teamStrategySystem.getTeamStrategy(teamId === 'red' ? 'red' : 'blue');
+    }
+    
+    getSystem(systemName) {
+        switch(systemName) {
+            case 'agent': return this.agentSystem;
+            case 'base': return this.baseSystem;
+            case 'resource': return this.resourceSystem;
+            case 'collision': return this.collisionSystem;
+            case 'combat': return this.combatSystem;
+            case 'teamStrategy': return this.teamStrategySystem;
+            case 'spawner': return this.spawnerSystem;
+            case 'spawnScheduler': return this.spawnScheduler;
+            case 'world': return this;
+            default: return null;
+        }
+    }
+    
     // Interface to the combat system for adding effects
     createHitEffect(x, y, teamId) {
         return this.combatSystem.createHitEffect(x, y, teamId);
@@ -284,31 +354,32 @@ export class WorldSystem {
     
     // Add debug information for overlay
     getDebugInfo() {
-        const resourceCounts = {
-            energy: 0,
-            materials: 0,
-            data: 0
-        };
-        
-        let controlledByTeam1 = 0;
-        let controlledByTeam2 = 0;
-        let obstacleCount = 0;
-        
-        for (const cell of this.hexGrid.cells) {
-            if (cell.resourceType) {
-                resourceCounts[cell.resourceType]++;
-            }
+        try {
+            const resourceCounts = {
+                energy: 0,
+                materials: 0,
+                data: 0
+            };
             
-            if (cell.controlLevel < -0.2) {
-                controlledByTeam1++;
-            } else if (cell.controlLevel > 0.2) {
-                controlledByTeam2++;
-            }
+            let controlledByTeam1 = 0;
+            let controlledByTeam2 = 0;
+            let obstacleCount = 0;
             
-            if (cell.hasObstacle) {
-                obstacleCount++;
+            for (const cell of this.hexGrid.cells) {
+                if (cell.resourceType) {
+                    resourceCounts[cell.resourceType]++;
+                }
+                
+                if (cell.controlLevel < -0.2) {
+                    controlledByTeam1++;
+                } else if (cell.controlLevel > 0.2) {
+                    controlledByTeam2++;
+                }
+                
+                if (cell.hasObstacle) {
+                    obstacleCount++;
+                }
             }
-        }
         
         // Get base resources
         const team1Resources = this.baseSystem.getResources(1);
@@ -335,5 +406,35 @@ export class WorldSystem {
             obstacles: obstacleCount,
             totalCells: this.hexGrid.cells.length
         };
+        } catch (error) {
+            console.error("Error generating debug info:", error);
+            return {
+                resources: { energy: 0, materials: 0, data: 0 },
+                territory: { team1: 0, team2: 0 },
+                teamResources: { team1: { energy: 0, materials: 0, data: 0 }, team2: { energy: 0, materials: 0, data: 0 } },
+                agents: { team1: 0, team2: 0 },
+                obstacles: 0,
+                totalCells: 1
+            };
+        }
+    }
+    
+    /**
+     * Get territory control percentages for LLM system
+     * @returns {Object} Percentage of map controlled by each team
+     */
+    getTerritoryControlPercentages() {
+        try {
+            const info = this.getDebugInfo();
+            const totalCells = Math.max(1, info.totalCells - info.obstacles); // Avoid division by zero
+            
+            return {
+                red: Math.round((info.territory.team1 / totalCells) * 100),
+                blue: Math.round((info.territory.team2 / totalCells) * 100)
+            };
+        } catch (error) {
+            console.error("Error calculating territory percentages:", error);
+            return { red: 0, blue: 0 };
+        }
     }
 }

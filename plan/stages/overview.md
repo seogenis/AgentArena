@@ -30,10 +30,11 @@ This directory contains detailed plans for each implementation stage of the AI T
 1. [**Basic Rendering**](./stage1_basic_rendering.md) - ✅ COMPLETED - Established foundational game window with basic rendering
 2. [**Game World Design**](./stage2_game_world.md) - ✅ COMPLETED - Implemented territory grid and resources
 3. [**Base Camps and Agents**](./stage3_bases_and_agents.md) - ✅ COMPLETED - Added team bases and hardcoded agents with resource collection
-4. [**Game Mechanics**](./stage4_game_mechanics.md) - 🔄 NEXT - Implement core interactions and gameplay systems
-5. [**LLM Agent Piloting**](./stage5_llm_pilots.md) - Replace hardcoded behaviors with LLM control
-6. [**LLM Team Spawners**](./stage6_llm_spawners.md) - Add LLM-based team strategy and agent generation
-7. [**Polish and Refinement**](./stage7_polish.md) - Fine-tune gameplay and optimize performance
+4. [**Game Mechanics**](./stage4_game_mechanics.md) - ✅ COMPLETED - Implement core interactions and gameplay systems
+5. [**LLM Team Spawners**](./stage5_llm_spawners.md) - 🔄 NEXT - Add LLM-based team strategy and agent generation
+6. [**Polish and Refinement**](./stage7_polish.md) - Fine-tune gameplay and optimize performance
+
+> **Stage Restructuring Note**: Original stages 5 and 6 have been consolidated into a single stage 5, focusing exclusively on LLM team spawners. Agent behavior will continue to use the existing hardcoded patterns, while the LLM will focus on team strategy, agent creation, and resource allocation decisions.
 
 ## CLAUDE.md Template
 

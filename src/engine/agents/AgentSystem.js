@@ -74,6 +74,56 @@ export class AgentSystem {
     getAgentsByTeam(teamId) {
         return this.agents.filter(agent => agent.teamId === teamId);
     }
+    
+    /**
+     * Create an agent from an LLM-generated specification
+     * @param {string|number} teamId - Team ID (1/2 or 'red'/'blue')
+     * @param {Object} spec - Agent specification from LLM
+     * @param {Object} position - Starting position {x, y}
+     * @returns {Agent} The created agent
+     */
+    createAgentFromSpec(teamId, spec, position) {
+        if (!spec || !spec.role || !spec.attributes) {
+            console.error("Invalid agent specification", spec);
+            return null;
+        }
+        
+        // Convert string teamId to number if needed
+        const numericTeamId = teamId === 'red' ? 1 : (teamId === 'blue' ? 2 : teamId);
+        
+        try {
+            // Create agent with the specified role and attributes
+            const agent = new Agent(
+                this.agentIdCounter++,
+                position.x + (Math.random() * 60) - 30, // Add small random offset
+                position.y + (Math.random() * 60) - 30,
+                numericTeamId,
+                spec.role,
+                spec.attributes
+            );
+            
+            // Set resource priority from spec
+            if (spec.priority) {
+                agent.resourcePriority = spec.priority;
+            }
+            
+            // Set description from spec
+            if (spec.description) {
+                agent.description = spec.description;
+            }
+            
+            // Add to agent list
+            this.agents.push(agent);
+            
+            // Add to render system
+            this.renderSystem.addRenderable(agent);
+            
+            return agent;
+        } catch (error) {
+            console.error(`Failed to create agent from spec:`, error, spec);
+            return null;
+        }
+    }
 
     update(deltaTime) {
         // Update all agents and process dead agents
@@ -197,6 +247,16 @@ export class AgentSystem {
         
         // Only collect if agent has capacity and is not already carrying resources
         if (agent.resourceType === null && agent.resourceAmount === 0) {
+            // Check if this agent should prioritize a specific resource
+            if (agent.resourcePriority && agent.resourcePriority !== cell.resourceType) {
+                // If agent has a resource priority and this isn't it,
+                // there's a chance they'll ignore this resource
+                const skipProbability = 0.7; // 70% chance to skip non-priority resources
+                if (Math.random() < skipProbability) {
+                    return; // Skip this resource and keep looking for priority resource
+                }
+            }
+            
             // Start collecting (would normally take time, but we'll make it instant for now)
             agent.resourceType = cell.resourceType;
             

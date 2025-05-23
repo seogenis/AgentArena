@@ -96,19 +96,47 @@ function updateWorldInfo() {
     const info = engine.worldSystem.getDebugInfo();
     const worldInfoElement = document.getElementById('world-info');
     
-    if (worldInfoElement) {
+    if (worldInfoElement && engine.worldSystem) {
         // Enhanced info display with team resources and agents
         const team1Resources = info.teamResources?.team1 || { energy: 0, materials: 0, data: 0 };
         const team2Resources = info.teamResources?.team2 || { energy: 0, materials: 0, data: 0 };
+        
+        // Get team strategies if LLM systems are available
+        let redStrategy = '';
+        let blueStrategy = '';
+        
+        if (engine.worldSystem.llmEnabled && engine.worldSystem.teamStrategySystem) {
+            const redTeamStrategy = engine.worldSystem.getTeamStrategy('red');
+            const blueTeamStrategy = engine.worldSystem.getTeamStrategy('blue');
+            
+            redStrategy = redTeamStrategy ? 
+                `<div>Strategy: ${redTeamStrategy.strategy} - ${redTeamStrategy.focus}</div>` : '';
+            
+            blueStrategy = blueTeamStrategy ? 
+                `<div>Strategy: ${blueTeamStrategy.strategy} - ${blueTeamStrategy.focus}</div>` : '';
+        }
+        
+        // Get spawn queue info if available
+        let spawnQueueInfo = '';
+        if (engine.worldSystem.llmEnabled && engine.worldSystem.spawnerSystem) {
+            const redQueueSize = engine.worldSystem.spawnerSystem.spawnQueue.red.length;
+            const blueQueueSize = engine.worldSystem.spawnerSystem.spawnQueue.blue.length;
+            
+            spawnQueueInfo = `<div>Spawn Queues: Red: ${redQueueSize}, Blue: ${blueQueueSize}</div>`;
+        }
         
         worldInfoElement.innerHTML = `
             <div>Map Resources: Energy: ${info.resources.energy}, Materials: ${info.resources.materials}, Data: ${info.resources.data}</div>
             <div>Territory: Red: ${info.territory.team1}, Blue: ${info.territory.team2}</div>
             <div>Obstacles: ${info.obstacles}</div>
+            ${spawnQueueInfo}
             <div style="margin-top: 5px; color: #ff7777;">Red Team: ${info.agents?.team1 || 0} agents</div>
             <div>Resources: E:${team1Resources.energy} M:${team1Resources.materials} D:${team1Resources.data}</div>
+            ${redStrategy}
             <div style="margin-top: 5px; color: #7777ff;">Blue Team: ${info.agents?.team2 || 0} agents</div>
             <div>Resources: E:${team2Resources.energy} M:${team2Resources.materials} D:${team2Resources.data}</div>
+            ${blueStrategy}
+            <div style="margin-top: 5px;">LLM Status: ${engine.worldSystem.llmEnabled ? 'Enabled' : 'Disabled'}</div>
         `;
     }
 }
@@ -163,8 +191,8 @@ window.addEventListener('keydown', e => {
             engine.worldSystem.createAgent(1, 'explorer');
             updateWorldInfo();
         }
-    } else if (e.key === 'b' || e.key === 's') {
-        // 'b', 's' keys - Create blue team collector agent
+    } else if (e.key === 's') {
+        // 's' key - Create blue team collector agent
         if (engine.worldSystem) {
             engine.worldSystem.createAgent(2, 'collector');
             updateWorldInfo();
@@ -200,6 +228,36 @@ window.addEventListener('keydown', e => {
         // 'k' key - Create death effect for testing
         if (engine.worldSystem) {
             engine.worldSystem.createDeathEffect(mouse.worldX, mouse.worldY, 2);
+        }
+    } else if (e.key === 'l') {
+        // 'l' key - Toggle LLM systems
+        if (engine.worldSystem) {
+            const llmEnabled = engine.worldSystem.toggleLLM();
+            console.log(`LLM systems ${llmEnabled ? 'enabled' : 'disabled'}`);
+        }
+    } else if (e.key === 'g') {
+        // 'g' key - Request a new team strategy for Red team
+        if (engine.worldSystem) {
+            console.log("Requesting new strategy for Red team...");
+            engine.worldSystem.requestTeamStrategy('red');
+        }
+    } else if (e.key === 'v') {
+        // 'v' key - Request a new team strategy for Blue team
+        if (engine.worldSystem) {
+            console.log("Requesting new strategy for Blue team...");
+            engine.worldSystem.requestTeamStrategy('blue');
+        }
+    } else if (e.key === 'n') {
+        // 'n' key - Request a new agent spawn for Red team
+        if (engine.worldSystem) {
+            console.log("Requesting new agent spawn for Red team...");
+            engine.worldSystem.requestAgentSpawn('red');
+        }
+    } else if (e.key === 'm') {
+        // 'm' key - Request a new agent spawn for Blue team
+        if (engine.worldSystem) {
+            console.log("Requesting new agent spawn for Blue team...");
+            engine.worldSystem.requestAgentSpawn('blue');
         }
     }
 });
@@ -381,7 +439,14 @@ instructionsElement.innerHTML = `
         P key: Toggle combat system<br>
         H key: Test hit effect at cursor<br>
         K key: Test death effect at cursor<br>
-        R key: Reset game (when game over)
+        R key: Reset game (when game over)<br>
+        <br>
+        LLM Features:<br>
+        L key: Toggle LLM systems<br>
+        G key: Request Red team strategy<br>
+        V key: Request Blue team strategy<br>
+        N key: Spawn LLM agent for Red team<br>
+        M key: Spawn LLM agent for Blue team
     </div>
 `;
 debugOverlay.appendChild(instructionsElement);

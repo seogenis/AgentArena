@@ -43,9 +43,10 @@ A strategic game where competing LLM "spawners" create AI agents that compete fo
 
 ### 6. LLM Integration
 - **Spawner Role**: Creates agents with unique attributes, abilities, and strategies
-- **Pilot Role**: Controls individual agent decision-making continuously
-- **Strategy Role**: Analyzes game state and suggests high-level tactics
-- **Communication**: Limited communication between agents of same faction
+- **Strategy Role**: Analyzes game state and determines team-level tactics
+- **Resource Allocation**: Decides how to invest resources in new agents
+- **Agent Specialization**: Designs agents with optimized attributes for specific roles
+- **Deployment Planning**: Determines when and where to create new agents
 
 ## Gameplay Flow
 
@@ -71,9 +72,27 @@ A strategic game where competing LLM "spawners" create AI agents that compete fo
    - Elimination of all enemy agents
    - Resource domination (accumulating 10x the resources of opponent)
 
-## Agent Decision Making
+## Team Strategy & Agent Generation
 
-Agents have access to the following information when making decisions:
+The LLM spawner has access to the following information when making decisions:
+- Overall territory control status
+- Resource distribution and availability
+- Enemy agent types and behaviors observed
+- Team resource storage levels
+- Current team composition and performance
+- Game stage and time elapsed
+
+Its decision space includes:
+- Team strategy selection (aggressive, defensive, resource-focused)
+- Agent type and role allocation (collectors, explorers, defenders, attackers)
+- Agent attribute distribution (speed, health, attack, defense, vision, capacity)
+- Resource investment priorities
+- Deployment locations and timing
+- Adaptation to enemy strategies
+
+## Agent Decision Making (Hardcoded)
+
+Individual agents continue to use hardcoded behavior patterns with the following information:
 - Visible resources within vision range
 - Visible enemy agents within vision range
 - Current territory control status in visible areas
@@ -81,7 +100,7 @@ Agents have access to the following information when making decisions:
 - Current mission from their spawner
 - Distance to home base
 
-Their decision space includes:
+Their decision space remains:
 - Movement (where to go)
 - Resource collection (what to gather)
 - Combat (when to engage)

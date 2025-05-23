@@ -2,77 +2,163 @@ import { Circle } from '../shapes/Circle.js';
 import { Rectangle } from '../shapes/Rectangle.js';
 
 export class Agent {
-    constructor(id, x, y, teamId, type = 'collector') {
+    constructor(id, x, y, teamId, type = 'collector', attributes = null) {
         this.id = id;
         this.x = x;
         this.y = y;
         this.teamId = teamId;
-        this.type = type; // 'collector' or 'explorer'
+        this.type = type; // 'collector', 'explorer', 'defender', or 'attacker'
+        this.role = type; // Alias for type to match LLM terminology
+        
+        // Resource priority
+        this.resourcePriority = null; // Set by the LLM spawner
+        
+        // Description (set by LLM)
+        this.description = '';
+        
+        // Get attribute values from LLM or use defaults
+        const attrValues = this.calculateAttributes(attributes, type);
         
         // Movement parameters
-        this.speed = type === 'collector' ? 
-            60 + Math.random() * 30 : // Collector: slower
-            100 + Math.random() * 50; // Explorer: faster
+        this.speed = 60 + (attrValues.speed * 100); // 60-160 range based on speed attribute
         this.targetX = null;
         this.targetY = null;
         this.waypoints = [];
         this.waypointIndex = 0;
         
         // Agent stats
-        this.health = 100;
-        this.maxHealth = 100;
-        this.attackPower = type === 'collector' ? 5 : 15;
-        this.defense = type === 'collector' ? 10 : 5;
-        this.visionRange = type === 'collector' ? 120 : 180;
+        this.health = 50 + (attrValues.health * 100); // 50-150 range based on health attribute
+        this.maxHealth = this.health;
+        this.attackPower = 5 + (attrValues.attack * 20); // 5-25 range based on attack attribute
+        this.defense = 2 + (attrValues.defense * 15); // 2-17 range based on defense attribute
+        this.visionRange = 100 + (attrValues.speed * 100); // 100-200 range based on speed
         
         // Combat state
         this.isAttacking = false;
         this.target = null;
         this.attackCooldown = 0;
-        this.attackCooldownMax = 1.0; // 1 second between attacks
+        this.attackCooldownMax = 1.5 - (attrValues.speed * 0.7); // 0.8-1.5s based on speed
         this.damageFlashTime = 0;
         this.isHealing = false;
         this.healCooldown = 0;
         
         // Resource carrying
-        this.capacity = type === 'collector' ? 5 : 2;
+        this.capacity = 2 + (attrValues.carryCapacity * 8); // 2-10 range based on carry capacity
         this.resourceType = null;
         this.resourceAmount = 0;
         
         // Visual properties
-        this.baseRadius = type === 'collector' ? 14 : 10;
+        this.baseRadius = 10 + (type === 'collector' ? 4 : 0) + (type === 'defender' ? 2 : 0);
         this.radius = this.baseRadius;
         this.color = this.teamId === 1 ? '#ff3333' : '#3333ff'; // Base team color
         this.outlineColor = '#ffffff';
         
         // Shape varies by type
-        this.shape = type; // 'collector' (circle) or 'explorer' (triangle-like)
+        this.shape = type; 
         
         this.zIndex = 5;
         this.isVisible = true;
         
         // Movement patterns - different for each type
-        if (type === 'collector') {
-            this.movementPatterns = [
-                this.patrolPattern.bind(this),
-                this.resourcePattern.bind(this)
-            ];
-        } else { // explorer
-            this.movementPatterns = [
-                this.circlePattern.bind(this),
-                this.resourcePattern.bind(this),
-                this.explorationPattern.bind(this)
-            ];
-        }
+        this.setupMovementPatterns();
         
         this.currentPattern = Math.floor(Math.random() * this.movementPatterns.length);
         this.patternUpdateTime = 0;
-        this.patternDuration = type === 'collector' ? 
-            15 + Math.random() * 10 : // Collectors stay on task longer
-            8 + Math.random() * 7;    // Explorers change more frequently
+        
+        // Pattern duration varies by type
+        this.patternDuration = this.getPatternDuration();
         
         // Set up initial waypoints based on pattern
         this.setupPattern();
+    }
+    
+    calculateAttributes(attributes, type) {
+        // If attributes provided by LLM, use those
+        if (attributes) {
+            return {
+                speed: Math.min(1.0, Math.max(0.1, attributes.speed)),
+                health: Math.min(1.0, Math.max(0.1, attributes.health)),
+                attack: Math.min(1.0, Math.max(0.1, attributes.attack)),
+                defense: Math.min(1.0, Math.max(0.1, attributes.defense)),
+                carryCapacity: Math.min(1.0, Math.max(0.1, attributes.carryCapacity))
+            };
+        }
+        
+        // Otherwise use defaults based on type
+        const defaults = {
+            collector: {
+                speed: 0.4,
+                health: 0.5,
+                attack: 0.2,
+                defense: 0.5,
+                carryCapacity: 0.8
+            },
+            explorer: {
+                speed: 0.8,
+                health: 0.4,
+                attack: 0.4,
+                defense: 0.3,
+                carryCapacity: 0.3
+            },
+            defender: {
+                speed: 0.3,
+                health: 0.9,
+                attack: 0.6,
+                defense: 0.9,
+                carryCapacity: 0.2
+            },
+            attacker: {
+                speed: 0.7,
+                health: 0.6,
+                attack: 0.9,
+                defense: 0.5,
+                carryCapacity: 0.1
+            }
+        };
+        
+        return defaults[type] || defaults.collector;
+    }
+    
+    setupMovementPatterns() {
+        // Base patterns available to all types
+        this.movementPatterns = [
+            this.patrolPattern.bind(this),
+            this.resourcePattern.bind(this)
+        ];
+        
+        // Add type-specific patterns
+        switch(this.type) {
+            case 'collector':
+                // Collectors already have the base patterns
+                break;
+            case 'explorer':
+                this.movementPatterns.push(this.circlePattern.bind(this));
+                this.movementPatterns.push(this.explorationPattern.bind(this));
+                break;
+            case 'defender':
+                this.movementPatterns.push(this.defensePattern.bind(this));
+                break;
+            case 'attacker':
+                this.movementPatterns.push(this.attackPattern.bind(this));
+                break;
+            default:
+                break;
+        }
+    }
+    
+    getPatternDuration() {
+        switch(this.type) {
+            case 'collector':
+                return 15 + Math.random() * 10; // Collectors stay on task longer
+            case 'explorer':
+                return 8 + Math.random() * 7; // Explorers change more frequently
+            case 'defender':
+                return 20 + Math.random() * 10; // Defenders stay in position longer
+            case 'attacker':
+                return 10 + Math.random() * 5; // Attackers change targets frequently
+            default:
+                return 12 + Math.random() * 8; // Default duration
+        }
     }
     
     setupPattern() {
@@ -301,10 +387,22 @@ export class Agent {
     }
     
     render(ctx) {
-        if (this.type === 'collector') {
-            this.renderCollector(ctx);
-        } else {
-            this.renderExplorer(ctx);
+        switch(this.type) {
+            case 'collector':
+                this.renderCollector(ctx);
+                break;
+            case 'explorer':
+                this.renderExplorer(ctx);
+                break;
+            case 'defender':
+                this.renderDefender(ctx);
+                break;
+            case 'attacker':
+                this.renderAttacker(ctx);
+                break;
+            default:
+                this.renderCollector(ctx);
+                break;
         }
         
         // If carrying resources, draw resource indicator
@@ -535,6 +633,178 @@ export class Agent {
     
     stopHealing() {
         this.isHealing = false;
+    }
+    
+    renderDefender(ctx) {
+        // Draw the defender agent (square shape)
+        const size = this.radius * 1.5;
+        
+        // Draw the square body
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x - size/2, this.y - size/2, size, size);
+        
+        // Draw outline - flash white when taking damage
+        if (this.damageFlashTime > 0) {
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+        } else {
+            ctx.strokeStyle = this.outlineColor;
+            ctx.lineWidth = 2;
+        }
+        ctx.strokeRect(this.x - size/2, this.y - size/2, size, size);
+        
+        // Draw team indicator (inner circle)
+        ctx.fillStyle = this.teamId === 1 ? '#cc0000' : '#0000cc';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw health bar
+        this.renderHealthBar(ctx);
+        
+        // Draw attack line if attacking
+        if (this.isAttacking && this.target && this.attackCooldown <= 0.2) {
+            this.renderAttackLine(ctx);
+        }
+    }
+    
+    renderAttacker(ctx) {
+        // Draw the attacker agent (diamond shape)
+        const size = this.radius * 1.2;
+        
+        // Calculate points for diamond
+        const points = [
+            { x: this.x, y: this.y - size },        // top
+            { x: this.x + size, y: this.y },        // right
+            { x: this.x, y: this.y + size },        // bottom
+            { x: this.x - size, y: this.y }         // left
+        ];
+        
+        // Draw the diamond body
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw outline - flash white when taking damage
+        if (this.damageFlashTime > 0) {
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+        } else {
+            ctx.strokeStyle = this.outlineColor;
+            ctx.lineWidth = 2;
+        }
+        ctx.stroke();
+        
+        // Draw team indicator (inner circle)
+        ctx.fillStyle = this.teamId === 1 ? '#cc0000' : '#0000cc';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw health bar
+        this.renderHealthBar(ctx);
+        
+        // Draw attack line if attacking
+        if (this.isAttacking && this.target && this.attackCooldown <= 0.2) {
+            this.renderAttackLine(ctx);
+        }
+    }
+    
+    defensePattern() {
+        // Create a pattern that stays near the team base
+        let basePos = { x: this.x, y: this.y }; // Default fallback
+        
+        // Try to get actual base position if game engine is available
+        try {
+            if (window.gameEngine) {
+                const baseSystem = window.gameEngine.getSystem('base');
+                if (baseSystem) {
+                    const pos = baseSystem.getBasePosition(this.teamId);
+                    if (pos) {
+                        basePos = pos;
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn("Could not access base system for defense pattern");
+        }
+        
+        // Create a patrol radius around the base
+        const patrolRadius = 50 + Math.random() * 50; // 50-100 units from base
+        const segments = 6; // Number of points in the patrol
+        
+        // Create waypoints in a circle around the base
+        this.waypoints = [];
+        for (let i = 0; i <= segments; i++) {
+            const angle = (i / segments) * Math.PI * 2;
+            this.waypoints.push({
+                x: basePos.x + Math.cos(angle) * patrolRadius,
+                y: basePos.y + Math.sin(angle) * patrolRadius
+            });
+        }
+    }
+    
+    attackPattern() {
+        // Create a pattern that moves toward enemy territory
+        let enemyBasePos = null;
+        
+        // Try to get enemy base position if game engine is available
+        try {
+            if (window.gameEngine) {
+                const baseSystem = window.gameEngine.getSystem('base');
+                if (baseSystem) {
+                    const enemyTeamId = this.teamId === 1 ? 2 : 1;
+                    enemyBasePos = baseSystem.getBasePosition(enemyTeamId);
+                }
+            }
+        } catch (error) {
+            console.warn("Could not access base system for attack pattern");
+        }
+        
+        // If we couldn't get enemy base, use exploration pattern
+        if (!enemyBasePos) {
+            return this.explorationPattern();
+        }
+        
+        // Create a path that approaches enemy base through random waypoints
+        const waypoints = [{ x: this.x, y: this.y }];
+        let lastX = this.x;
+        let lastY = this.y;
+        
+        // Calculate direction to enemy base
+        const dx = enemyBasePos.x - lastX;
+        const dy = enemyBasePos.y - lastY;
+        const baseDistance = Math.sqrt(dx * dx + dy * dy);
+        const baseAngle = Math.atan2(dy, dx);
+        
+        // Create 3-5 waypoints leading toward enemy base
+        const numPoints = 3 + Math.floor(Math.random() * 3);
+        const stepDistance = baseDistance / (numPoints + 1);
+        
+        for (let i = 1; i <= numPoints; i++) {
+            // Move generally toward enemy base with some randomness
+            const angleVariation = (Math.random() - 0.5) * Math.PI / 2; // +/- 45 degrees
+            const angle = baseAngle + angleVariation;
+            const distance = stepDistance * 0.8 + Math.random() * stepDistance * 0.4;
+            
+            lastX += Math.cos(angle) * distance;
+            lastY += Math.sin(angle) * distance;
+            
+            waypoints.push({ x: lastX, y: lastY });
+        }
+        
+        // Final waypoint is near enemy base
+        const finalDistance = 100 + Math.random() * 50; // Stay 100-150 units away from enemy base
+        const finalX = enemyBasePos.x - Math.cos(baseAngle) * finalDistance;
+        const finalY = enemyBasePos.y - Math.sin(baseAngle) * finalDistance;
+        waypoints.push({ x: finalX, y: finalY });
+        
+        this.waypoints = waypoints;
     }
     
     isDead() {

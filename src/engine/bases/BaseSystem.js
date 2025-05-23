@@ -168,6 +168,54 @@ export class BaseSystem {
         const team = teamId === 1 ? 'team1' : 'team2';
         return this.resourceStorage[team];
     }
+    
+    /**
+     * Get resources for a team in the format expected by LLM systems
+     * @param {number|string} teamId - Team ID (1/2 or 'red'/'blue')
+     * @returns {Object} Resources in the format {energy, materials, data}
+     */
+    getTeamResources(teamId) {
+        // Convert string teamId to number if needed
+        const numericTeamId = teamId === 'red' ? 1 : (teamId === 'blue' ? 2 : teamId);
+        return this.getResources(numericTeamId);
+    }
+    
+    /**
+     * Check if a team has enough resources for a cost
+     * @param {number|string} teamId - Team ID (1/2 or 'red'/'blue')
+     * @param {Object} cost - Resource cost {energy, materials, data}
+     * @returns {boolean} Whether team has enough resources
+     */
+    hasResources(teamId, cost) {
+        const numericTeamId = teamId === 'red' ? 1 : (teamId === 'blue' ? 2 : teamId);
+        const resources = this.getResources(numericTeamId);
+        
+        return resources.energy >= cost.energy &&
+               resources.materials >= cost.materials &&
+               resources.data >= cost.data;
+    }
+    
+    /**
+     * Use (deduct) resources from a team
+     * @param {number|string} teamId - Team ID (1/2 or 'red'/'blue')
+     * @param {Object} cost - Resource cost {energy, materials, data}
+     * @returns {boolean} Whether the resources were successfully used
+     */
+    useResources(teamId, cost) {
+        const numericTeamId = teamId === 'red' ? 1 : (teamId === 'blue' ? 2 : teamId);
+        
+        if (!this.hasResources(numericTeamId, cost)) {
+            return false;
+        }
+        
+        const team = numericTeamId === 1 ? 'team1' : 'team2';
+        
+        this.resourceStorage[team].energy -= cost.energy;
+        this.resourceStorage[team].materials -= cost.materials;
+        this.resourceStorage[team].data -= cost.data;
+        
+        return true;
+    }
 
     getBasePosition(teamId) {
         const base = teamId === 1 ? this.bases.team1 : this.bases.team2;

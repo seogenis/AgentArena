@@ -41,9 +41,10 @@ See the [Stages Directory](./stages/) for detailed breakdown of:
 - [Stage 2: Game World Design with Resources](./stages/stage2_game_world.md)
 - [Stage 3: Base Camps and Hardcoded Agents](./stages/stage3_bases_and_agents.md)
 - [Stage 4: Agent Interactions and Game Mechanics](./stages/stage4_game_mechanics.md)
-- [Stage 5: LLM Agent Piloting](./stages/stage5_llm_pilots.md)
-- [Stage 6: LLM Team Spawner Implementation](./stages/stage6_llm_spawners.md)
+- [Stage 5: LLM Team Spawners](./stages/stage5_llm_spawners.md)
 - [Final Stage: Polish and Refinement](./stages/stage7_polish.md)
+
+> **Note**: The original plan included separate stages for LLM Agent Piloting (Stage 5) and LLM Team Spawners (Stage 6). These have been consolidated into a single Stage 5 focusing exclusively on LLM spawners. Agent behavior will continue to use hardcoded patterns.
 
 Each stage includes specific implementation requirements, expected results, testing methods, and completion criteria. See the [overview document](./stages/overview.md) for development best practices.
 
