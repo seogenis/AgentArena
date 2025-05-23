@@ -45,7 +45,10 @@ const apiKey = getApiKey();
 
 // Initialize with any key found, or use mock mode if no key
 const useMockResponses = !apiKey; // Use mock mode if no API key
-apiInitializer.initialize(apiKey, { useMockResponses });
+apiInitializer.initialize(apiKey, { 
+    useMockResponses,
+    apiEndpoint: 'https://api.openai.com/v1/chat/completions'
+});
 
 // Save API key to localStorage if available
 if (apiKey && typeof window !== 'undefined' && window.localStorage) {

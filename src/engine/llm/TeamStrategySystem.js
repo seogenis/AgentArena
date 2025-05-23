@@ -7,11 +7,15 @@
 
 import LLMService from './LLMService.js';
 import PromptTemplates from './PromptTemplates.js';
+import ServiceInitializer from './ServiceInitializer.js';
 
 class TeamStrategySystem {
     constructor(gameEngine) {
         this.gameEngine = gameEngine;
         this.llmService = new LLMService();
+        
+        // Register with ServiceInitializer for API updates
+        ServiceInitializer.registerService('TeamStrategySystem', this);
         
         // Strategy cache to avoid too frequent API calls
         this.teamStrategies = {
@@ -34,9 +38,21 @@ class TeamStrategySystem {
         // Time between strategy updates (in milliseconds)
         this.strategyUpdateInterval = 30000; // 30 seconds
         
-        // Enable mock responses if API is not configured
-        if (!this.llmService.isConfigured()) {
-            console.log('LLM API not configured. Using mock responses for TeamStrategySystem.');
+        // Configure from current environment settings
+        const env = typeof window !== 'undefined' ? window.process?.env : process?.env;
+        if (env) {
+            const apiKey = env.LLM_API_KEY || '';
+            const useMockResponses = env.USE_MOCK_RESPONSES === 'true';
+            
+            if (apiKey && !useMockResponses) {
+                console.log('🔑 Using OpenAI API for TeamStrategySystem');
+            } else {
+                console.log('🤖 Using mock responses for TeamStrategySystem');
+                this.llmService.enableMockResponses();
+            }
+        } else {
+            // Enable mock responses if environment not configured
+            console.log('⚠️ Environment not initialized. Using mock responses for TeamStrategySystem.');
             this.llmService.enableMockResponses();
         }
     }
@@ -87,10 +103,18 @@ class TeamStrategySystem {
                     ...newStrategy,
                     lastUpdated: Date.now()
                 };
-                console.log(`Updated ${teamId} team strategy:`, newStrategy.description);
+                console.log(`✅ Updated ${teamId} team strategy:`, newStrategy.description);
             } else {
-                console.error(`Invalid strategy response for ${teamId} team:`, response);
-                // Keep using existing strategy instead of failing
+                console.warn(`⚠️ Invalid strategy response for ${teamId} team, using fallback strategy`);
+                
+                // Use a fallback strategy instead of keeping old one
+                this.teamStrategies[teamId] = {
+                    strategy: "balanced",
+                    focus: "resources",
+                    priorities: ["collect_energy", "expand_territory", "defend_base"],
+                    description: "Fallback balanced strategy due to invalid response.",
+                    lastUpdated: Date.now()
+                };
             }
         } catch (error) {
             console.error(`Error updating ${teamId} team strategy:`, error);

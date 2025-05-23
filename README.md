@@ -54,6 +54,11 @@ This will save a screenshot as `debug-screenshot.png` in the project root.
 - 1/2/3: Add resources (Energy/Materials/Data)
 - C: Collect resource at cursor position
 
+  To use the system:
+  1. Set your API key using window.initializeAPI(your-key)
+  2. Disable mock responses with window.toggleMockResponses(false)
+  3. Reset services with window.reinitializeLLMServices()
+
 ## Project Structure
 
 - `/src/engine/` - Core game engine components

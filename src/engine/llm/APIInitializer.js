@@ -40,9 +40,15 @@ class APIInitializer {
             env.LLM_API_KEY = apiKey || env.LLM_API_KEY || '';
             env.LLM_API_ENDPOINT = options.apiEndpoint || env.LLM_API_ENDPOINT || this.defaults.apiEndpoint;
             env.LLM_MODEL_NAME = options.modelName || env.LLM_MODEL_NAME || this.defaults.modelName;
-            env.USE_MOCK_RESPONSES = options.useMockResponses !== undefined 
-                ? String(options.useMockResponses) 
-                : env.USE_MOCK_RESPONSES || String(this.defaults.useMockResponses);
+            
+            // If API key is provided, automatically disable mock responses unless explicitly requested
+            if (apiKey && options.useMockResponses === undefined) {
+                env.USE_MOCK_RESPONSES = 'false'; // Use real API when key is provided
+            } else {
+                env.USE_MOCK_RESPONSES = options.useMockResponses !== undefined 
+                    ? String(options.useMockResponses) 
+                    : env.USE_MOCK_RESPONSES || String(this.defaults.useMockResponses);
+            }
                 
             // Store API key in window for persistence
             if (typeof window !== 'undefined') {
