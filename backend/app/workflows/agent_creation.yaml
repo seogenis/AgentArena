@@ -1,0 +1,71 @@
+name: agent_creation
+description: Create specialized agent based on team needs
+entities:
+  llm:
+    type: aiq.llms.openai
+    config:
+      model: gpt-4-turbo
+  agent_creation_prompt:
+    type: aiq.prompts.simple_prompt
+    config:
+      template: |
+        You are designing a specialized agent for the {{team_id}} team in a territory control game.
+        
+        TEAM STRATEGY:
+        - Overall strategy: {{strategy.strategy}}
+        - Strategic focus: {{strategy.focus}}
+        - Resource priorities: {{strategy.priorities}}
+        
+        AVAILABLE RESOURCES:
+        - Energy: {{resources.energy}}
+        - Materials: {{resources.materials}}
+        - Data: {{resources.data}}
+        
+        CURRENT AGENT COMPOSITION:
+        {% for agent_type in current_agents %}
+        - {{agent_type.type}}: {{agent_type.count}} agents
+        {% endfor %}
+        
+        Design a new agent with specialized attributes based on our team strategy. The agent should serve a specific purpose that complements our existing agents and aligns with our strategy.
+        
+        Choose a role from the following options:
+        - collector: Specializes in gathering resources efficiently
+        - explorer: Specializes in exploring the map and finding resources
+        - defender: Specializes in protecting territory and other agents
+        - attacker: Specializes in combat and attacking enemy agents
+        
+        Then assign attribute values (all values must be between 0.0 and 1.0):
+        - speed: Movement speed (higher = faster)
+        - health: Hit points (higher = more health)
+        - attack: Combat strength (higher = more damage)
+        - defense: Damage reduction (higher = more protection)
+        - carryCapacity: Resource carrying ability (higher = carries more)
+        
+        The sum of all attributes should not exceed 3.0 for balance.
+        
+        Also select a resource priority that this agent should focus on (energy, materials, data, or territory).
+        
+        You must return a valid JSON object with the following format:
+        {
+          "role": "collector|explorer|defender|attacker",
+          "attributes": {
+            "speed": 0.X,
+            "health": 0.X,
+            "attack": 0.X,
+            "defense": 0.X,
+            "carryCapacity": 0.X
+          },
+          "priority": "energy|materials|data|territory",
+          "description": "Brief description of this agent's specialization"
+        }
+workflow:
+  steps:
+    - id: create_agent
+      entity: llm
+      config:
+        prompt: $agent_creation_prompt
+        temperature: 0.7
+      outputs:
+        - agent
+  outputs:
+    - agent
