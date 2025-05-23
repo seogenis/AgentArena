@@ -3,18 +3,60 @@
 ## Project Overview
 Building a browser-based strategic game where LLM-powered teams create and control AI agents competing for resources and territory.
 
-## Current Implementation Stage: Stage 5 - LLM Team Spawners
-Status: Completed ✅
+## Current Implementation Stage: Stage 6 - AIQToolkit Integration
+Status: In Progress 🔄
 
 ## Current Todo List:
-- [x] Set up LLM API integration
-- [x] Design team strategy prompt templates
-- [x] Implement team-level LLM integration
-- [x] Create agent generation system based on LLM specifications
-- [x] Develop resource allocation system for spawning
-- [x] Add agent specialization and role assignment
-- [x] Implement strategic agent deployment
-- [x] Create fallback behaviors for API failures
+- [ ] Set up Python backend with FastAPI and AIQToolkit
+- [ ] Design AIQToolkit workflows for team strategy generation
+- [ ] Create AIQToolkit workflows for agent creation and specialization
+- [ ] Implement REST API endpoints for frontend communication
+- [ ] Modify JavaScript LLMService to communicate with Python backend
+- [ ] Add WebSocket support for real-time updates (optional)
+- [ ] Enhance visualization of team strategies and agent decisions
+- [ ] Implement fallback mechanism when backend is unavailable
+- [ ] Containerize frontend and backend for easier deployment
+
+## Team Structure
+The project is divided into three teams for Stage 6 implementation:
+
+### Frontend Team
+- Modify JavaScript LLMService to communicate with Python backend
+- Implement fallback mechanism for when backend is unavailable
+- Add visual indicators for AIQToolkit-driven decisions
+- Enhance visualization of team strategies and agent decisions
+- Add UI for displaying backend connection status
+
+### Backend Team
+- Set up Python backend with FastAPI and AIQToolkit
+- Design AIQToolkit workflows for team strategy generation
+- Create AIQToolkit workflows for agent creation and specialization
+- Implement REST API endpoints for frontend communication
+- Add WebSocket support for real-time updates (optional)
+
+### DevOps Team
+- Containerize frontend and backend for easier deployment
+- Create Docker Compose configuration for development
+- Set up environment variable management
+- Configure CORS for secure communication
+
+## Implementation Resources
+- [Python Backend Handoff](./plan/python_backend_handoff.md) - Detailed instructions for the backend team
+- [JavaScript Frontend Handoff](./plan/javascript_frontend_handoff.md) - Detailed instructions for the frontend team
+- [AIQToolkit Integration Design](./plan/llm_aiqtoolkit_design.md) - Architecture and design specifications
+
+## Where Developers Should Start
+- All developers should first read [Project Summary](./plan/project_summary.md) for an overview
+- Then read [Stage 6 Implementation Guide](./plan/stage6_implementation_guide.md) for implementation details
+- Frontend developers should focus on [JavaScript Frontend Handoff](./plan/javascript_frontend_handoff.md)
+- Backend developers should focus on [Python Backend Handoff](./plan/python_backend_handoff.md)
+- DevOps developers should focus on Docker configuration in the implementation guide
+
+## Team Coordination
+- **IMPORTANT**: Before beginning separate implementation, all teams must review the [Coordination Guidelines](./plan/coordination_guidelines.md)
+- Schedule an initial joint planning session to define API contracts
+- Follow the integration checkpoints defined in the coordination guidelines
+- Maintain regular communication through the defined channels
 
 ## Completed:
 - [x] Set up project repository
@@ -148,11 +190,20 @@ Status: Completed ✅
 - Enhanced debug overlay to show team strategies
 - Set up mock response system for development without API keys
 
+## Stage 6 Implementation Plan:
+- Set up Python backend with FastAPI
+- Integrate NVIDIA's AIQToolkit for enhanced agent coordination
+- Create REST API endpoints for team strategy and agent creation
+- Modify JavaScript frontend to communicate with Python backend
+- Add fallback mechanisms for when backend is unavailable
+- Enhance visualization of team strategies and agent decisions
+- Containerize frontend and backend for easier deployment
+
 ## Next Stage Preparation:
-- [ ] Enhance game visualization to show LLM decisions
-- [ ] Add more complex strategy patterns
-- [ ] Design improved UI for LLM status
-- [ ] Optimize game performance
+- [ ] Prepare UI for displaying more detailed strategy information
+- [ ] Add visual indicators for agent coordination
+- [ ] Design improved debugging tools for backend communication
+- [ ] Plan deployment architecture for multi-component system
 
 ## Next Stage: Final Stage - Polish and Refinement
 Status: Not Started
@@ -173,9 +224,10 @@ Status: Not Started
 - ✅ Stage 3: Base Camps and Hardcoded Agents
 - ✅ Stage 4: Agent Interactions and Game Mechanics
 - ✅ Stage 5: LLM Team Spawners
-- 🔄 Final Stage: Polish and Refinement
+- 🔄 Stage 6: AIQToolkit Integration
+- ⬜ Final Stage: Polish and Refinement
 
-> **Note**: Stage progression has been revised. Original stages 5 (LLM Agent Piloting) and 6 (LLM Team Spawners) have been consolidated into a single Stage 5 focusing on LLM team spawners. Agent behavior will continue to use hardcoded patterns.
+> **Note**: Stage progression has been revised. Original stages 5 (LLM Agent Piloting) and 6 (LLM Team Spawners) were consolidated into Stage 5. Stage 6 now focuses on integrating NVIDIA's AIQToolkit via a Python backend to enable more sophisticated agent behaviors and team strategies.
 
 ## Notes for Claude
 - When starting a new stage, update this file with the stage's todo list

@@ -1,61 +1,9 @@
-# Stage 5: LLM Agent Piloting
+# [DEPRECATED] Stage 5: LLM Agent Piloting
 
-## Goal
-Replace hardcoded behaviors with LLM-controlled agent actions.
+> **IMPORTANT NOTE**: This file is deprecated. The project structure has been revised, and Stages 5 (LLM Agent Piloting) and 6 (LLM Team Spawners) were consolidated into a single Stage 5: LLM Team Spawners.
+>
+> Please refer to [stage5_llm_spawners.md](./stage5_llm_spawners.md) for the current Stage 5 implementation plan.
 
-## Implementation Requirements
-- Integrate LLM API for agent decision-making
-- Design agent prompt templates
-- Implement agent state observation system
-- Create decision parsing and execution system
-- Build agent memory/context management
+The original Stage 5 focused on LLM agent piloting (individual agent control), but this approach was replaced with the team spawner approach, which uses LLM for team strategy and agent generation while maintaining hardcoded agent behaviors.
 
-## Expected Results
-- Agents making decisions based on LLM responses
-- Natural and strategic-seeming behavior
-- Appropriate responses to game situations
-- Reasonably performant decision cycles
-
-## Testing Methods
-- **Console**: Logs of LLM prompts and responses
-- **Visual**: Verify agent behavior matches expected strategies
-- **JS Tests**: Unit tests with mock LLM responses
-- **Performance**: Measure decision cycle times
-
-## Completion Criteria
-- Agents consistently make reasonable decisions
-- Decision latency remains below acceptable threshold
-- No hanging/freezing due to LLM calls
-- Behavior appears intelligent and purposeful
-
-## CLAUDE.md Template for This Stage
-
-```markdown
-# Current Implementation Stage: Stage 5 - LLM Agent Piloting
-Status: In Progress
-
-## Todo List:
-- [ ] Set up LLM API integration
-- [ ] Design agent prompt templates
-- [ ] Implement agent state observation system
-- [ ] Create decision parsing system
-- [ ] Build agent memory/context management
-- [ ] Implement response execution system
-- [ ] Create fallback behaviors for API failures
-
-## Completed:
-- [x] [Add completed tasks here]
-
-## Testing Results:
-- LLM response quality: [Pass/Fail]
-- Decision appropriateness: [Pass/Fail]
-- Performance metrics: [Pass/Fail]
-- Agent behavior coherence: [Pass/Fail]
-
-## Issues and Solutions:
-- [Document any issues encountered]
-
-## Next Stage Preparation:
-- [ ] Design team-level LLM strategy system
-- [ ] Plan agent generation mechanics
-```
+This file is kept for historical reference only.

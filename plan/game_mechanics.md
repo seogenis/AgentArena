@@ -48,6 +48,13 @@ A strategic game where competing LLM "spawners" create AI agents that compete fo
 - **Agent Specialization**: Designs agents with optimized attributes for specific roles
 - **Deployment Planning**: Determines when and where to create new agents
 
+### 7. AIQToolkit Integration
+- **Python Backend**: Hosts AIQToolkit for enhanced agent intelligence
+- **Workflow Management**: Structured agent workflows using YAML configuration
+- **Team Coordination**: Improved coordination between agents through AIQToolkit
+- **Adaptive Strategies**: Team strategies that evolve based on opponent behaviors
+- **Performance Optimization**: Tools for monitoring and optimizing agent performance
+
 ## Gameplay Flow
 
 1. **Initialization Phase**
