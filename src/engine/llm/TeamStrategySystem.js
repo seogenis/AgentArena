@@ -3,6 +3,7 @@
  * 
  * Manages team-level strategic decisions using LLM integration.
  * Determines high-level team strategies and priorities.
+ * Enhanced with visualization for AIQToolkit strategies.
  */
 
 import LLMService from './LLMService.js';
@@ -99,11 +100,24 @@ class TeamStrategySystem {
             
             // Validate strategy fields
             if (this.validateTeamStrategy(newStrategy)) {
+                // Add source information to the strategy
+                if (this.llmService.useBackend && this.llmService.backendClient.isConnected) {
+                    newStrategy.source = 'AIQToolkit';
+                } else if (this.llmService.apiKey) {
+                    newStrategy.source = 'Direct LLM';
+                } else {
+                    newStrategy.source = 'Mock';
+                }
+                
                 this.teamStrategies[teamId] = {
                     ...newStrategy,
                     lastUpdated: Date.now()
                 };
+                
                 console.log(`✅ Updated ${teamId} team strategy:`, newStrategy.description);
+                
+                // Display the updated strategy in the UI
+                this.displayTeamStrategy(teamId, this.teamStrategies[teamId]);
             } else {
                 console.warn(`⚠️ Invalid strategy response for ${teamId} team, using fallback strategy`);
                 
@@ -113,8 +127,12 @@ class TeamStrategySystem {
                     focus: "resources",
                     priorities: ["collect_energy", "expand_territory", "defend_base"],
                     description: "Fallback balanced strategy due to invalid response.",
+                    source: 'Fallback',
                     lastUpdated: Date.now()
                 };
+                
+                // Display the fallback strategy in the UI
+                this.displayTeamStrategy(teamId, this.teamStrategies[teamId]);
             }
         } catch (error) {
             console.error(`Error updating ${teamId} team strategy:`, error);
@@ -231,9 +249,73 @@ class TeamStrategySystem {
         if (this.validateTeamStrategy(strategy)) {
             this.teamStrategies[teamId] = {
                 ...strategy,
+                source: 'Manual',
                 lastUpdated: Date.now()
             };
+            
+            // Display the manually set strategy in the UI
+            this.displayTeamStrategy(teamId, this.teamStrategies[teamId]);
         }
+    }
+    
+    /**
+     * Display team strategy in debug overlay
+     * @param {string} teamId - ID of the team
+     * @param {Object} strategy - Strategy object to display
+     */
+    displayTeamStrategy(teamId, strategy) {
+        const debugOverlay = document.getElementById('debug-overlay');
+        if (!debugOverlay) return;
+        
+        const teamColor = teamId === 'team1' || teamId === 'red' ? 'Red' : 'Blue';
+        const strategyElement = document.getElementById(`${teamColor.toLowerCase()}-team-strategy`);
+        
+        if (strategyElement) {
+            // Update existing element
+            strategyElement.innerHTML = this.formatStrategyDisplay(teamColor, strategy);
+        } else {
+            // Create new element
+            const newStrategyElement = document.createElement('div');
+            newStrategyElement.id = `${teamColor.toLowerCase()}-team-strategy`;
+            newStrategyElement.className = 'team-strategy';
+            newStrategyElement.innerHTML = this.formatStrategyDisplay(teamColor, strategy);
+            debugOverlay.appendChild(newStrategyElement);
+        }
+    }
+    
+    /**
+     * Format strategy display with enhanced information
+     * @param {string} teamColor - Team color (Red/Blue)
+     * @param {Object} strategy - Strategy object
+     * @returns {string} HTML for strategy display
+     */
+    formatStrategyDisplay(teamColor, strategy) {
+        let html = `<h3>${teamColor} Team Strategy</h3>`;
+        
+        // Main strategy
+        html += `<div class="strategy-type">${strategy.strategy.toUpperCase()}</div>`;
+        
+        // Focus with visual indicator
+        const focusClass = `focus-${strategy.focus}`;
+        html += `<div class="strategy-focus ${focusClass}">${strategy.focus.toUpperCase()}</div>`;
+        
+        // Priorities
+        if (strategy.priorities && strategy.priorities.length > 0) {
+            html += '<div style="margin-top: 5px;">Priorities: ';
+            html += strategy.priorities.map(p => `<span class="priority">${p.replace('_', ' ')}</span>`).join(' ');
+            html += '</div>';
+        }
+        
+        // Description
+        if (strategy.description) {
+            html += `<div class="strategy-desc">${strategy.description}</div>`;
+        }
+        
+        // Source indicator
+        const source = strategy.source || 'Unknown';
+        html += `<div class="strategy-source">Source: ${source}</div>`;
+        
+        return html;
     }
 
     /**

@@ -1,12 +1,13 @@
 /**
  * LLMService.js
  * 
- * Handles API communication with the LLM provider.
+ * Handles API communication with the LLM provider and the AIQToolkit Python backend.
  * Sends prompts and receives responses for team strategy and agent generation.
  */
 
 import { parseLLMResponse, parseTeamStrategy, parseAgentSpecification } from './LLMSchemas.js';
 import serviceInitializer from './ServiceInitializer.js';
+import BackendAPIClient from './BackendAPIClient.js';
 
 class LLMService {
     constructor() {
@@ -16,6 +17,11 @@ class LLMService {
         this.modelName = env.LLM_MODEL_NAME || "gpt-4.1-mini";
         this.requestsInProgress = 0;
         this.useMockResponses = env.USE_MOCK_RESPONSES !== "false";
+        
+        // Initialize backend client
+        this.useBackend = true;
+        this.backendClient = new BackendAPIClient();
+        this.backendClient.startConnectionChecks();
         
         // Register with service initializer
         if (typeof serviceInitializer !== 'undefined') {
@@ -38,6 +44,114 @@ class LLMService {
      */
     enableMockResponses() {
         this.useMockResponses = true;
+    }
+
+    /**
+     * Check if backend is connected
+     * @returns {Promise<boolean>} Whether the backend is connected
+     */
+    async checkBackendConnection() {
+        const isConnected = await this.backendClient.checkConnection();
+        console.log(`Backend connection: ${isConnected ? 'Connected' : 'Disconnected'}`);
+        return isConnected;
+    }
+
+    /**
+     * Generate team strategy
+     * @param {string} teamId - The team ID
+     * @param {object} gameState - The current game state
+     * @returns {Promise<object>} - The team strategy
+     */
+    async generateTeamStrategy(teamId, gameState) {
+        try {
+            // Try to use backend if available
+            if (this.useBackend) {
+                try {
+                    if (await this.backendClient.checkConnection()) {
+                        console.log(`Requesting team strategy from backend for ${teamId} team`);
+                        return await this.backendClient.requestTeamStrategy(teamId, gameState);
+                    } else {
+                        console.warn('Backend disconnected, falling back to direct LLM');
+                    }
+                } catch (error) {
+                    console.warn('Backend strategy generation failed, falling back to direct LLM:', error);
+                }
+            }
+            
+            // Fallback to direct LLM call
+            if (this.apiKey) {
+                const prompt = `Generate team strategy for ${teamId} team`;
+                return await this.getCompletion(prompt, { 
+                    timeout: 5000,
+                    promptType: 'strategy'
+                });
+            } else {
+                // Fallback to mock response if no API key
+                return this.getMockResponse(`Generate team strategy for ${teamId} team`, { promptType: 'strategy' });
+            }
+        } catch (error) {
+            console.error('Strategy generation error:', error);
+            return this.mockTeamStrategy(teamId, gameState);
+        }
+    }
+
+    /**
+     * Generate agent specification
+     * @param {string} teamId - The team ID
+     * @param {object} strategy - The team strategy
+     * @param {object} resources - Available resources
+     * @param {object} teamComposition - Current team composition
+     * @returns {Promise<object>} - The agent specification
+     */
+    async generateAgentSpecification(teamId, strategy, resources, teamComposition) {
+        try {
+            // Try to use backend if available
+            if (this.useBackend) {
+                try {
+                    if (await this.backendClient.checkConnection()) {
+                        console.log(`Requesting agent specification from backend for ${teamId} team`);
+                        
+                        // Convert team composition to format expected by backend
+                        const currentAgents = [];
+                        const agentsByType = {};
+                        
+                        // Count agents by type from the teamComposition object
+                        for (const agent of teamComposition) {
+                            const role = agent.role || 'unknown';
+                            agentsByType[role] = (agentsByType[role] || 0) + 1;
+                        }
+                        
+                        // Convert to array of {type, count} objects for backend
+                        for (const [type, count] of Object.entries(agentsByType)) {
+                            currentAgents.push({ type, count });
+                        }
+                        
+                        return await this.backendClient.requestAgentSpecification(
+                            teamId, strategy, resources, currentAgents
+                        );
+                    } else {
+                        console.warn('Backend disconnected, falling back to direct LLM');
+                    }
+                } catch (error) {
+                    console.warn('Backend agent generation failed, falling back to direct LLM:', error);
+                }
+            }
+            
+            // Fallback to direct LLM call
+            if (this.apiKey) {
+                const prompt = `Generate agent specification for ${teamId} team`;
+                return await this.getCompletion(prompt, { 
+                    timeout: 5000,
+                    promptType: 'agent'
+                });
+            } else {
+                // Fallback to mock response if no API key
+                return this.getMockResponse(`Generate agent specification for ${teamId} team`, { promptType: 'agent' });
+            }
+        } catch (error) {
+            console.error('Agent generation error:', error);
+            return this.mockAgentSpecification(teamId, strategy);
+        }
     }
 
     /**
@@ -130,7 +244,7 @@ class LLMService {
         
         try {
             // Improved prompt type detection
-            const promptType = this.detectPromptType(prompt);
+            const promptType = this.detectPromptType(prompt, options);
                 
             if (promptType === 'strategy' || prompt.includes('team strategy')) {
                 // Provide varied strategies to make gameplay more interesting
@@ -250,7 +364,7 @@ class LLMService {
      */
     getFallbackResponse(prompt, options) {
         // Use improved prompt type detection
-        const promptType = this.detectPromptType(prompt);
+        const promptType = this.detectPromptType(prompt, options);
         
         if (promptType === 'strategy' || prompt.includes('team strategy')) {
             console.log('📊 Using fallback team strategy response');
@@ -300,9 +414,15 @@ class LLMService {
     /**
      * Detect the type of prompt being sent
      * @param {string} prompt - The prompt to analyze
+     * @param {Object} options - Additional options
      * @returns {string} The detected prompt type ('strategy', 'agent', or 'unknown')
      */
-    detectPromptType(prompt) {
+    detectPromptType(prompt, options = {}) {
+        // If explicitly provided in options, use that
+        if (options.promptType) {
+            return options.promptType;
+        }
+        
         // Check for explicit indicators in the prompt
         if (prompt.includes('agent specification') || 
             prompt.includes('create an agent') || 
