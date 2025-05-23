@@ -7,6 +7,7 @@
 
 import LLMService from './LLMService.js';
 import PromptTemplates from './PromptTemplates.js';
+import { parseAgentSpecification } from './LLMSchemas.js';
 
 class SpawnerSystem {
     constructor(gameEngine) {
@@ -74,19 +75,42 @@ class SpawnerSystem {
         const teamStrategy = strategySystem.getTeamStrategy(teamId);
         const gameState = strategySystem.getGameState();
         
+        // Make sure agent-specific keywords are in the prompt
         const prompt = PromptTemplates.agentSpecification(gameState, teamId, teamStrategy);
         
         try {
+            console.log(`🤖 Requesting agent specification for ${teamId} team...`);
+            
             // Set a timeout for agent generation
-            const response = await this.llmService.getCompletion(prompt, { timeout: 8000 });
+            const response = await this.llmService.getCompletion(prompt, { 
+                timeout: 8000,
+                // Add hint for LLMService.detectPromptType
+                promptType: 'agent'
+            });
             
             let agentSpec;
-            try {
-                agentSpec = JSON.parse(response);
-            } catch (parseError) {
-                console.error(`Failed to parse LLM response for agent in ${teamId} team:`, parseError);
-                console.log(`Raw response:`, response);
-                throw new Error('Invalid JSON response from LLM');
+            
+            // First try to parse using the schema parser
+            const parsedSpec = parseAgentSpecification(response);
+            if (parsedSpec) {
+                console.log(`✅ Successfully parsed agent specification using schema parser`);
+                agentSpec = parsedSpec;
+            } else {
+                // Fallback to manual JSON parsing
+                try {
+                    agentSpec = JSON.parse(response);
+                    console.log(`ℹ️ Parsed agent specification using JSON.parse`);
+                } catch (parseError) {
+                    console.error(`Failed to parse LLM response for agent in ${teamId} team:`, parseError);
+                    console.log(`Raw response:`, response);
+                    throw new Error('Invalid JSON response from LLM');
+                }
+            }
+            
+            // Check if we got a team strategy by mistake
+            if (agentSpec && agentSpec.strategy && agentSpec.focus && !agentSpec.role) {
+                console.error(`Received team strategy instead of agent specification for ${teamId} team:`, agentSpec);
+                throw new Error('Received team strategy instead of agent specification');
             }
             
             // Validate agent specification

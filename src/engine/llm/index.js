@@ -9,13 +9,19 @@ import TeamStrategySystem from './TeamStrategySystem.js';
 import SpawnerSystem from './SpawnerSystem.js';
 import SpawnScheduler from './SpawnScheduler.js';
 import PromptTemplates from './PromptTemplates.js';
+import APIInitializer from './APIInitializer.js';
+import ServiceInitializer from './ServiceInitializer.js';
+import LLMSystem from './LLMSystem.js';
 
 export {
     LLMService,
     TeamStrategySystem,
     SpawnerSystem,
     SpawnScheduler,
-    PromptTemplates
+    PromptTemplates,
+    APIInitializer,
+    ServiceInitializer,
+    LLMSystem
 };
 
 // Initialize environment variables
@@ -37,7 +43,7 @@ const initializeEnv = () => {
         env.USE_MOCK_RESPONSES = env.USE_MOCK_RESPONSES || 'true';
         env.LLM_API_ENDPOINT = env.LLM_API_ENDPOINT || '';
         env.LLM_API_KEY = env.LLM_API_KEY || '';
-        env.LLM_MODEL_NAME = env.LLM_MODEL_NAME || 'gpt-3.5-turbo';
+        env.LLM_MODEL_NAME = env.LLM_MODEL_NAME || 'gpt-4.1-mini';
         
         // Log environment setup for diagnostic purposes
         console.log('LLM environment initialized. Mock responses: ' + 

@@ -4,6 +4,7 @@ import { CameraSystem } from '../engine/CameraSystem.js';
 import { WorldSystem } from '../engine/world/WorldSystem.js';
 import { Rectangle } from '../engine/shapes/Rectangle.js';
 import { Circle } from '../engine/shapes/Circle.js';
+import '../engine/llm/initAPI.js'; // Initialize API configuration
 
 // Initialize the game engine
 const engine = new GameEngine('game-canvas');

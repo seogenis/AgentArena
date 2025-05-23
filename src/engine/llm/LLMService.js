@@ -5,13 +5,24 @@
  * Sends prompts and receives responses for team strategy and agent generation.
  */
 
+import { parseLLMResponse, parseTeamStrategy, parseAgentSpecification } from './LLMSchemas.js';
+import serviceInitializer from './ServiceInitializer.js';
+
 class LLMService {
     constructor() {
-        this.apiEndpoint = process.env.LLM_API_ENDPOINT || "";
-        this.apiKey = process.env.LLM_API_KEY || "";
-        this.modelName = process.env.LLM_MODEL_NAME || "gpt-3.5-turbo";
+        const env = typeof window !== 'undefined' ? (window.process?.env || {}) : (process?.env || {});
+        this.apiEndpoint = env.LLM_API_ENDPOINT || "https://api.openai.com/v1/chat/completions";
+        this.apiKey = env.LLM_API_KEY || window.OPENAI_API_KEY || localStorage.getItem('OPENAI_API_KEY') || "";
+        this.modelName = env.LLM_MODEL_NAME || "gpt-4.1-mini";
         this.requestsInProgress = 0;
-        this.useMockResponses = process.env.USE_MOCK_RESPONSES === "true" || false;
+        this.useMockResponses = env.USE_MOCK_RESPONSES !== "false";
+        
+        // Register with service initializer
+        if (typeof serviceInitializer !== 'undefined') {
+            serviceInitializer.registerService('LLMService', this);
+        }
+        
+        console.log(`LLM Service initialized with: ${this.useMockResponses ? 'MOCK MODE' : 'API MODE'}`);
     }
 
     /**
@@ -84,7 +95,18 @@ class LLMService {
                 throw new Error('Invalid API response structure');
             }
             
-            return data.choices[0].message.content;
+            const responseText = data.choices[0].message.content;
+            
+            // Parse response using schema validation
+            const parsedResponse = parseLLMResponse(prompt, responseText, options);
+            
+            if (parsedResponse) {
+                console.log('✅ Successfully parsed LLM response with schema validation');
+                return JSON.stringify(parsedResponse);
+            } else {
+                console.warn('⚠️ Failed to parse LLM response, returning raw response');
+                return responseText;
+            }
         } catch (error) {
             console.error("Error calling LLM API:", error);
             return this.getFallbackResponse(prompt, options);
@@ -107,7 +129,10 @@ class LLMService {
         console.log('📝 Using mock LLM response (API not configured)');
         
         try {
-            if (prompt.includes('team strategy')) {
+            // Improved prompt type detection
+            const promptType = this.detectPromptType(prompt);
+                
+            if (promptType === 'strategy' || prompt.includes('team strategy')) {
                 // Provide varied strategies to make gameplay more interesting
                 const strategies = [
                     {
@@ -136,8 +161,10 @@ class LLMService {
                     }
                 ];
                 
+                // Log successful mock strategy response
+                console.log('📊 Generated mock team strategy response');
                 return JSON.stringify(strategies[Math.floor(Math.random() * strategies.length)]);
-            } else if (prompt.includes('agent specification')) {
+            } else if (promptType === 'agent' || prompt.includes('agent specification')) {
                 // More varied agent types
                 const agentTypes = [
                     {
@@ -190,13 +217,22 @@ class LLMService {
                     }
                 ];
                 
+                // Log successful mock agent response
+                console.log('🤖 Generated mock agent specification response');
                 return JSON.stringify(agentTypes[Math.floor(Math.random() * agentTypes.length)]);
             } else {
+                // Log the prompt for debugging
+                console.log('❌ Unknown prompt type, defaulting to team strategy. First 100 chars:', prompt.substring(0, 100) + '...');
+                
+                // Default to balanced strategy if we can't identify the prompt type
                 return JSON.stringify({
-                    error: "Unknown prompt type",
-                    message: "I'm not sure how to respond to that prompt."
+                    strategy: "balanced",
+                    focus: "resources",
+                    priorities: ["collect_energy", "expand_territory", "defend_base"],
+                    description: "Default balanced strategy (fallback)."
                 });
             }
+            
         } catch (error) {
             console.error("Error generating mock response:", error);
             return JSON.stringify({
@@ -213,17 +249,22 @@ class LLMService {
      * @returns {string} A fallback response
      */
     getFallbackResponse(prompt, options) {
-        if (prompt.includes('team strategy')) {
+        // Use improved prompt type detection
+        const promptType = this.detectPromptType(prompt);
+        
+        if (promptType === 'strategy' || prompt.includes('team strategy')) {
+            console.log('📊 Using fallback team strategy response');
             return JSON.stringify({
                 strategy: "balanced",
                 focus: "resources",
                 priorities: ["collect_energy", "expand_territory", "defend_base"],
                 description: "Balanced approach focusing on resource collection."
             });
-        } else if (prompt.includes('agent specification')) {
+        } else if (promptType === 'agent' || prompt.includes('agent specification')) {
             const roles = ["collector", "explorer", "defender", "attacker"];
             const role = roles[Math.floor(Math.random() * roles.length)];
             
+            console.log('🤖 Using fallback agent specification response');
             return JSON.stringify({
                 role: role,
                 attributes: {
@@ -237,7 +278,13 @@ class LLMService {
                 description: `Standard ${role} with balanced attributes`
             });
         } else {
-            return "Fallback response: unable to process request.";
+            console.log('❓ Unknown prompt type in fallback, defaulting to team strategy');
+            return JSON.stringify({
+                strategy: "balanced",
+                focus: "resources",
+                priorities: ["collect_energy", "expand_territory", "defend_base"],
+                description: "Default balanced strategy (fallback)."
+            });
         }
     }
 
@@ -247,6 +294,52 @@ class LLMService {
      */
     hasRequestsInProgress() {
         return this.requestsInProgress > 0;
+    }
+
+
+    /**
+     * Detect the type of prompt being sent
+     * @param {string} prompt - The prompt to analyze
+     * @returns {string} The detected prompt type ('strategy', 'agent', or 'unknown')
+     */
+    detectPromptType(prompt) {
+        // Check for explicit indicators in the prompt
+        if (prompt.includes('agent specification') || 
+            prompt.includes('create an agent') || 
+            prompt.includes('design an agent') ||
+            prompt.includes('generate agent')) {
+            return 'agent';
+        }
+        
+        if (prompt.includes('team strategy') || 
+            prompt.includes('develop a strategy') || 
+            prompt.includes('create a strategy') ||
+            prompt.includes('generate strategy')) {
+            return 'strategy';
+        }
+        
+        // More generic checks as fallback
+        if (prompt.includes('agent') && 
+            (prompt.includes('attributes') || prompt.includes('role') || prompt.includes('specification'))) {
+            return 'agent';
+        }
+        
+        if (prompt.includes('strategy') && 
+            (prompt.includes('focus') || prompt.includes('priorities') || prompt.includes('team'))) {
+            return 'strategy';
+        }
+        
+        // Final fallback - check for common keywords
+        if (prompt.includes('role') && prompt.includes('attributes')) {
+            return 'agent';
+        }
+        
+        if (prompt.includes('priorities') && prompt.includes('focus')) {
+            return 'strategy';
+        }
+        
+        console.warn('⚠️ Could not confidently determine prompt type:', prompt.substring(0, 100) + '...');
+        return 'unknown';
     }
 }
 

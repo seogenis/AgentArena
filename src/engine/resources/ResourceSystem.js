@@ -112,4 +112,49 @@ export class ResourceSystem {
         }
         return false;
     }
+    
+    /**
+     * Get counts of all resource types on the map
+     * @returns {Object} Counts of each resource type
+     */
+    getResourceCounts() {
+        const counts = {
+            energy: 0,
+            materials: 0,
+            data: 0,
+            total: 0
+        };
+        
+        // Count resources in all cells
+        for (const cell of this.hexGrid.cells) {
+            if (cell.resourceType && cell.resourceAmount > 0) {
+                counts[cell.resourceType] += cell.resourceAmount;
+                counts.total += cell.resourceAmount;
+            }
+        }
+        
+        return counts;
+    }
+    
+    /**
+     * Get locations of resource hotspots for strategic planning
+     * @param {number} minResourceAmount - Minimum amount to consider a hotspot
+     * @returns {Array} Array of resource hotspot locations and types
+     */
+    getResourceHotspots(minResourceAmount = 3) {
+        const hotspots = [];
+        
+        for (const cell of this.hexGrid.cells) {
+            if (cell.resourceType && cell.resourceAmount >= minResourceAmount) {
+                hotspots.push({
+                    x: cell.x,
+                    y: cell.y,
+                    type: cell.resourceType,
+                    amount: cell.resourceAmount
+                });
+            }
+        }
+        
+        return hotspots;
+    }
 }

@@ -5,6 +5,8 @@
  * These templates are used to generate prompts for team strategy and agent creation.
  */
 
+import { generateJSONFormatInstructions, TeamStrategySchema, AgentSpecificationSchema } from './LLMSchemas.js';
+
 const PromptTemplates = {
     /**
      * Generate a prompt for team strategy
@@ -27,13 +29,23 @@ CURRENT GAME STATE:
 - Resource counts for ${opponent} team: Energy: ${gameState.resources[teamId === 'red' ? 'blue' : 'red'].energy}, Materials: ${gameState.resources[teamId === 'red' ? 'blue' : 'red'].materials}, Data: ${gameState.resources[teamId === 'red' ? 'blue' : 'red'].data}
 - Resource distribution on map: Energy: ${gameState.resourcesOnMap.energy}, Materials: ${gameState.resourcesOnMap.materials}, Data: ${gameState.resourcesOnMap.data}
 
-Your task is to determine the optimal strategy for your team. Respond with a JSON object containing:
-- strategy: Overall strategy type (aggressive, defensive, balanced, economic)
-- focus: Main focus (resources, territory, combat)
-- priorities: Array of priority actions in order (collect_energy, collect_materials, collect_data, expand_territory, attack_enemies, defend_territory, defend_base)
-- description: Brief description of your strategy
+Your task is to determine the optimal strategy for your team. 
 
-Respond in valid JSON format without explanation or additional text.`;
+Respond with a properly formatted JSON object with this exact structure:
+\`\`\`json
+{
+  "strategy": "balanced",  // Must be one of: balanced, aggressive, defensive, economic
+  "focus": "resources",    // Must be one of: resources, territory, combat
+  "priorities": [          // Array of priority actions in order of importance
+    "collect_energy",      // Must include at least one priority
+    "expand_territory",    // Valid options: collect_energy, collect_materials, collect_data,
+    "defend_base"          // expand_territory, attack_enemies, defend_territory, defend_base
+  ],
+  "description": "A balanced approach focusing on resource collection."
+}
+\`\`\`
+
+Always return a valid JSON object exactly matching this structure.`;
     },
     
     /**
@@ -47,7 +59,10 @@ Respond in valid JSON format without explanation or additional text.`;
         const team = teamId === 'red' ? 'Red' : 'Blue';
         const availableResources = gameState.resources[teamId];
         
-        return `You are designing an AI agent for the ${team} team in a resource-based territory control game.
+        return `You are designing an AI AGENT (not a team strategy) for the ${team} team in a resource-based territory control game.
+
+AGENT CREATION REQUEST:
+This is a request to create a new AGENT with specific role and attributes, NOT a team strategy.
 
 CURRENT TEAM STATUS:
 - Team strategy: ${teamStrategy.strategy}
@@ -57,15 +72,29 @@ CURRENT TEAM STATUS:
 
 Your task is to specify the attributes and role for a new agent to create. Attributes must be values between 0.0 and 1.0. Higher values require more resources to create.
 
-Respond with a JSON object containing:
-- role: The agent's role (collector, explorer, defender, attacker)
-- attributes: Object containing attributes (speed, health, attack, defense, carryCapacity) with values 0.0-1.0
-- priority: Preferred resource type to target (energy, materials, data)
-- description: Brief description of this agent's purpose
-
 Based on the team strategy and current game state, design an agent that will be most beneficial.
 
-Respond in valid JSON format without explanation or additional text.`;
+=== CRITICAL FORMAT INSTRUCTIONS ===
+You MUST return a valid JSON object representing a SINGLE AGENT (not a team strategy).
+The JSON MUST have the EXACT following structure with all fields present:
+
+\`\`\`json
+{
+  "role": "collector",     // REQUIRED: Must be one of: collector, explorer, defender, attacker
+  "attributes": {          // REQUIRED: Object with 5 numeric attributes
+    "speed": 0.7,          // REQUIRED: Value between 0.0 and 1.0
+    "health": 0.6,         // REQUIRED: Value between 0.0 and 1.0
+    "attack": 0.3,         // REQUIRED: Value between 0.0 and 1.0
+    "defense": 0.5,        // REQUIRED: Value between 0.0 and 1.0
+    "carryCapacity": 0.8   // REQUIRED: Value between 0.0 and 1.0
+  },
+  "priority": "energy",    // REQUIRED: Must be one of: energy, materials, data
+  "description": "Specialized resource collector focusing on energy."  // REQUIRED: Short description
+}
+\`\`\`
+
+DO NOT include "strategy", "focus", or "priorities" fields - those are for team strategy only, not agent creation.
+ONLY return the JSON object, no other text.`;
     }
 };
 

@@ -130,17 +130,62 @@ class TeamStrategySystem {
         const resourceSystem = this.gameEngine.getSystem('resource');
         const baseSystem = this.gameEngine.getSystem('base');
         
+        // Handle potential null or undefined systems
+        if (!worldSystem || !agentSystem || !resourceSystem || !baseSystem) {
+            console.error('TeamStrategySystem: Missing required game systems');
+            return {
+                territoryControl: { red: 50, blue: 50 },
+                agents: { red: [], blue: [] },
+                resources: { 
+                    red: { energy: 0, materials: 0, data: 0 },
+                    blue: { energy: 0, materials: 0, data: 0 }
+                },
+                resourcesOnMap: { energy: 0, materials: 0, data: 0, total: 0 }
+            };
+        }
+        
+        // Safe access to methods
+        const territoryControl = worldSystem.getTerritoryControlPercentages?.() || { red: 50, blue: 50 };
+        
+        // Handle agent counts safely
+        let redAgents = [];
+        let blueAgents = [];
+        try {
+            redAgents = agentSystem.getAgentsByTeam('red') || [];
+            blueAgents = agentSystem.getAgentsByTeam('blue') || [];
+        } catch (e) {
+            console.error('Error getting agent counts:', e);
+        }
+        
+        // Handle resource access safely
+        let redResources = { energy: 0, materials: 0, data: 0 };
+        let blueResources = { energy: 0, materials: 0, data: 0 };
+        try {
+            redResources = baseSystem.getTeamResources('red') || redResources;
+            blueResources = baseSystem.getTeamResources('blue') || blueResources;
+        } catch (e) {
+            console.error('Error getting team resources:', e);
+        }
+        
+        // Handle resource counts safely
+        let resourceCounts = { energy: 0, materials: 0, data: 0, total: 0 };
+        try {
+            resourceCounts = resourceSystem.getResourceCounts?.() || resourceCounts;
+        } catch (e) {
+            console.error('Error getting resource counts:', e);
+        }
+        
         return {
-            territoryControl: worldSystem.getTerritoryControlPercentages(),
+            territoryControl: territoryControl,
             agents: {
-                red: agentSystem.getAgentsByTeam('red'),
-                blue: agentSystem.getAgentsByTeam('blue')
+                red: redAgents,
+                blue: blueAgents
             },
             resources: {
-                red: baseSystem.getTeamResources('red'),
-                blue: baseSystem.getTeamResources('blue')
+                red: redResources,
+                blue: blueResources
             },
-            resourcesOnMap: resourceSystem.getResourceCounts()
+            resourcesOnMap: resourceCounts
         };
     }
 
