@@ -28,7 +28,7 @@ class LLMService {
             serviceInitializer.registerService('LLMService', this);
         }
         
-        console.log(`LLM Service initialized with: ${this.useMockResponses ? 'MOCK MODE' : 'API MODE'}`);
+        console.log(`🚀 LLM Service initialized with: ${this.useMockResponses ? 'MOCK MODE' : 'API MODE'}`);
     }
 
     /**
@@ -68,7 +68,7 @@ class LLMService {
             if (this.useBackend) {
                 try {
                     if (await this.backendClient.checkConnection()) {
-                        console.log(`Requesting team strategy from backend for ${teamId} team`);
+                        console.log(`🔄 Requesting team strategy from AIQToolkit backend for ${teamId} team`);
                         return await this.backendClient.requestTeamStrategy(teamId, gameState);
                     } else {
                         console.warn('Backend disconnected, falling back to direct LLM');
@@ -109,7 +109,7 @@ class LLMService {
             if (this.useBackend) {
                 try {
                     if (await this.backendClient.checkConnection()) {
-                        console.log(`Requesting agent specification from backend for ${teamId} team`);
+                        console.log(`🔄 Requesting agent specification from AIQToolkit backend for ${teamId} team`);
                         
                         // Convert team composition to format expected by backend
                         const currentAgents = [];
@@ -215,7 +215,7 @@ class LLMService {
             const parsedResponse = parseLLMResponse(prompt, responseText, options);
             
             if (parsedResponse) {
-                console.log('✅ Successfully parsed LLM response with schema validation');
+                // Successfully parsed response
                 return JSON.stringify(parsedResponse);
             } else {
                 console.warn('⚠️ Failed to parse LLM response, returning raw response');
@@ -239,8 +239,7 @@ class LLMService {
         // Wait a short time to simulate API latency
         await new Promise(resolve => setTimeout(resolve, 300));
 
-        // Log that we're using a mock response
-        console.log('📝 Using mock LLM response (API not configured)');
+        // No need to log every mock response
         
         try {
             // Improved prompt type detection
@@ -275,8 +274,7 @@ class LLMService {
                     }
                 ];
                 
-                // Log successful mock strategy response
-                console.log('📊 Generated mock team strategy response');
+                // No need to log every mock strategy response
                 return JSON.stringify(strategies[Math.floor(Math.random() * strategies.length)]);
             } else if (promptType === 'agent' || prompt.includes('agent specification')) {
                 // More varied agent types
@@ -331,8 +329,7 @@ class LLMService {
                     }
                 ];
                 
-                // Log successful mock agent response
-                console.log('🤖 Generated mock agent specification response');
+                // No need to log every mock agent response
                 return JSON.stringify(agentTypes[Math.floor(Math.random() * agentTypes.length)]);
             } else {
                 // Log the prompt for debugging
@@ -367,7 +364,7 @@ class LLMService {
         const promptType = this.detectPromptType(prompt, options);
         
         if (promptType === 'strategy' || prompt.includes('team strategy')) {
-            console.log('📊 Using fallback team strategy response');
+            // No need to log every fallback response
             return JSON.stringify({
                 strategy: "balanced",
                 focus: "resources",
@@ -378,7 +375,7 @@ class LLMService {
             const roles = ["collector", "explorer", "defender", "attacker"];
             const role = roles[Math.floor(Math.random() * roles.length)];
             
-            console.log('🤖 Using fallback agent specification response');
+            // No need to log every fallback response
             return JSON.stringify({
                 role: role,
                 attributes: {

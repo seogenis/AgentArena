@@ -31,7 +31,16 @@ class BackendAPIClient {
     async checkConnection() {
         try {
             const response = await fetch(`${this.baseUrl.split('/api')[0]}`);
+            const wasConnected = this.isConnected;
             this.isConnected = response.ok;
+            
+            // Log status change for the demo
+            if (this.isConnected && !wasConnected) {
+                console.log('🌐 Connected to AIQToolkit backend');
+            } else if (!this.isConnected && wasConnected) {
+                console.log('🌐 Lost connection to AIQToolkit backend, using fallbacks');
+            }
+            
             return this.isConnected;
         } catch (error) {
             console.warn('Backend connection check failed:', error);

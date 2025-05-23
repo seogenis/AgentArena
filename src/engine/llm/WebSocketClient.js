@@ -36,13 +36,13 @@ class WebSocketClient {
             this.socket = new WebSocket(`${this.url}/${this.clientId}`);
             
             this.socket.onopen = () => {
-                console.log('WebSocket connected');
+                console.log('📡 WebSocket connected to backend');
                 this.isConnected = true;
                 this.reconnectAttempts = 0;
             };
             
             this.socket.onclose = () => {
-                console.log('WebSocket disconnected');
+                console.log('❌ WebSocket disconnected');
                 this.isConnected = false;
                 this.attemptReconnect();
             };
@@ -65,14 +65,14 @@ class WebSocketClient {
      */
     attemptReconnect() {
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-            console.warn('Max reconnect attempts reached, giving up');
+            console.warn('🔄 Max WebSocket reconnect attempts reached, giving up');
             return;
         }
         
         this.reconnectAttempts++;
         const delay = Math.pow(2, this.reconnectAttempts) * 1000; // Exponential backoff
         
-        console.log(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`);
+        console.log(`🔄 Attempting WebSocket reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`);
         setTimeout(() => {
             this.connect();
         }, delay);

@@ -40,7 +40,6 @@ class SpawnerSystem {
         
         // Enable mock responses if API is not configured
         if (!this.llmService.isConfigured()) {
-            console.log('LLM API not configured. Using mock responses for SpawnerSystem.');
             this.llmService.enableMockResponses();
         }
     }
@@ -79,7 +78,7 @@ class SpawnerSystem {
         const prompt = PromptTemplates.agentSpecification(gameState, teamId, teamStrategy);
         
         try {
-            console.log(`🤖 Requesting agent specification for ${teamId} team...`);
+            console.log(`💭 Requesting new ${teamId} team agent...`);
             
             // Set a timeout for agent generation
             const response = await this.llmService.getCompletion(prompt, { 
@@ -93,13 +92,13 @@ class SpawnerSystem {
             // First try to parse using the schema parser
             const parsedSpec = parseAgentSpecification(response);
             if (parsedSpec) {
-                console.log(`✅ Successfully parsed agent specification using schema parser`);
+                // Successfully parsed agent spec
                 agentSpec = parsedSpec;
             } else {
                 // Fallback to manual JSON parsing
                 try {
                     agentSpec = JSON.parse(response);
-                    console.log(`ℹ️ Parsed agent specification using JSON.parse`);
+                    // Successfully parsed with JSON
                 } catch (parseError) {
                     console.error(`Failed to parse LLM response for agent in ${teamId} team:`, parseError);
                     console.log(`Raw response:`, response);
@@ -116,14 +115,14 @@ class SpawnerSystem {
             // Validate agent specification
             if (this.validateAgentSpecification(agentSpec)) {
                 this.spawnQueue[teamId].push(agentSpec);
-                console.log(`Added ${agentSpec.role} agent to ${teamId} spawn queue:`, agentSpec.description);
+                console.log(`📥 Added ${agentSpec.role} agent to ${teamId} spawn queue: ${agentSpec.description}`);
             } else {
                 console.error(`Invalid agent specification for ${teamId} team:`, response);
                 
                 // Create fallback agent if specification is invalid
                 const fallbackAgent = this.createFallbackAgentSpec(teamId, teamStrategy);
                 this.spawnQueue[teamId].push(fallbackAgent);
-                console.log(`Added fallback ${fallbackAgent.role} agent to ${teamId} spawn queue.`);
+                console.log(`⚠️ Added fallback ${fallbackAgent.role} agent to ${teamId} spawn queue due to LLM error`);
             }
         } catch (error) {
             console.error(`Error generating agent for ${teamId} team:`, error);
@@ -131,7 +130,7 @@ class SpawnerSystem {
             // Create fallback agent on error
             const fallbackAgent = this.createFallbackAgentSpec(teamId, teamStrategy);
             this.spawnQueue[teamId].push(fallbackAgent);
-            console.log(`Added fallback ${fallbackAgent.role} agent to ${teamId} spawn queue.`);
+            console.log(`⚠️ Added fallback ${fallbackAgent.role} agent to ${teamId} spawn queue due to LLM error`);
         }
     }
 
@@ -147,7 +146,7 @@ class SpawnerSystem {
         const requiredFields = ['role', 'attributes', 'priority', 'description'];
         for (const field of requiredFields) {
             if (!spec[field]) {
-                console.warn(`Missing required field: ${field} in agent spec`);
+                // Missing required field
                 return false;
             }
         }
@@ -155,7 +154,7 @@ class SpawnerSystem {
         // Check that role is valid
         const validRoles = ['collector', 'explorer', 'defender', 'attacker'];
         if (!validRoles.includes(spec.role)) {
-            console.warn(`Invalid role: ${spec.role} in agent spec`);
+            // Invalid role in agent spec
             // Try to fix role if possible
             if (typeof spec.role === 'string') {
                 if (spec.role.toLowerCase().includes('collect')) spec.role = 'collector';
@@ -163,7 +162,7 @@ class SpawnerSystem {
                 else if (spec.role.toLowerCase().includes('defend')) spec.role = 'defender';
                 else if (spec.role.toLowerCase().includes('attack')) spec.role = 'attacker';
                 else return false;
-                console.log(`Fixed role to: ${spec.role}`);
+                // Fixed invalid role
             } else {
                 return false;
             }
@@ -175,31 +174,31 @@ class SpawnerSystem {
             if (typeof spec.attributes[attr] !== 'number' || 
                 spec.attributes[attr] < 0 || 
                 spec.attributes[attr] > 1) {
-                console.warn(`Invalid attribute: ${attr}=${spec.attributes[attr]} in agent spec`);
+                // Invalid attribute in agent spec
                 
                 // Try to fix attribute if possible
                 if (typeof spec.attributes[attr] === 'number') {
                     // Clamp value to valid range
                     spec.attributes[attr] = Math.max(0, Math.min(1, spec.attributes[attr]));
-                    console.log(`Fixed attribute ${attr} to: ${spec.attributes[attr]}`);
+                    // Fixed attribute
                 } else if (typeof spec.attributes[attr] === 'string') {
                     // Try to parse number from string
                     try {
                         const value = parseFloat(spec.attributes[attr]);
                         if (!isNaN(value)) {
                             spec.attributes[attr] = Math.max(0, Math.min(1, value));
-                            console.log(`Converted attribute ${attr} from string to: ${spec.attributes[attr]}`);
+                            // Converted attribute from string
                         } else {
                             spec.attributes[attr] = 0.5; // Default value
-                            console.log(`Set default value for attribute ${attr}: 0.5`);
+                            // Set default attribute value
                         }
                     } catch (e) {
                         spec.attributes[attr] = 0.5; // Default value
-                        console.log(`Set default value for attribute ${attr}: 0.5`);
+                        // Set default attribute value
                     }
                 } else {
                     spec.attributes[attr] = 0.5; // Default value
-                    console.log(`Set default value for attribute ${attr}: 0.5`);
+                    // Set default attribute value
                 }
             }
         }
@@ -207,14 +206,14 @@ class SpawnerSystem {
         // Check priority resource
         const validPriorities = ['energy', 'materials', 'data'];
         if (!validPriorities.includes(spec.priority)) {
-            console.warn(`Invalid priority: ${spec.priority} in agent spec`);
+            // Invalid priority in agent spec
             // Set a default priority based on role
             if (spec.role === 'collector') spec.priority = 'materials';
             else if (spec.role === 'explorer') spec.priority = 'data';
             else if (spec.role === 'defender') spec.priority = 'materials';
             else if (spec.role === 'attacker') spec.priority = 'energy';
             else spec.priority = 'energy';
-            console.log(`Set default priority for ${spec.role}: ${spec.priority}`);
+            // Set default priority for role
         }
         
         return true;
@@ -340,7 +339,7 @@ class SpawnerSystem {
             // Remove from queue
             this.spawnQueue[teamId].shift();
             
-            console.log(`${teamId} team spawned a ${agentSpec.role} agent`);
+            console.log(`🔝 ${teamId.toUpperCase()} team spawned a ${agentSpec.role.toUpperCase()} agent (cost: ${resourceCost.energy}E, ${resourceCost.materials}M, ${resourceCost.data}D)`);
         }
     }
 

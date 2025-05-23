@@ -5,7 +5,7 @@ import { BaseSystem } from '../bases/BaseSystem.js';
 import { AgentSystem } from '../agents/AgentSystem.js';
 import { CollisionSystem } from '../utils/CollisionSystem.js';
 import { CombatSystem } from '../utils/CombatSystem.js';
-import { TeamStrategySystem, SpawnerSystem, SpawnScheduler } from '../llm/index.js';
+import { TeamStrategySystem, SpawnerSystem, SpawnScheduler, LLMSystem } from '../llm/index.js';
 
 export class WorldSystem {
     constructor(width, height, hexSize = 40, renderSystem) {
@@ -40,6 +40,9 @@ export class WorldSystem {
         this.spawnerSystem = new SpawnerSystem(this);
         this.spawnScheduler = new SpawnScheduler(this);
         
+        // Initialize the main LLM system for coordination
+        this.llmSystem = new LLMSystem(this);
+        
         // Flag to enable/disable LLM spawning
         this.llmEnabled = true;
         
@@ -60,6 +63,11 @@ export class WorldSystem {
         
         // Spawn initial resources
         this.resourceSystem.initialResourceSpawn(20);
+        
+        // Initialize LLM system
+        if (this.llmSystem) {
+            this.llmSystem.initialize();
+        }
     }
     
     update(deltaTime, timestamp) {
@@ -91,6 +99,11 @@ export class WorldSystem {
             
             // Update spawn scheduler - determine when to spawn agents
             this.spawnScheduler.update(deltaTime);
+            
+            // Update the main LLM system (handles demo mode and coordination)
+            if (this.llmSystem) {
+                this.llmSystem.update(deltaTime);
+            }
         }
         
         // Check victory conditions
@@ -332,6 +345,8 @@ export class WorldSystem {
             case 'teamStrategy': return this.teamStrategySystem;
             case 'spawner': return this.spawnerSystem;
             case 'spawnScheduler': return this.spawnScheduler;
+            case 'llm': return this.llmSystem;
+            case 'demo': return this.llmSystem ? this.llmSystem.demoSystem : null;
             case 'world': return this;
             default: return null;
         }

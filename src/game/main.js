@@ -260,6 +260,16 @@ window.addEventListener('keydown', e => {
             console.log("Requesting new agent spawn for Blue team...");
             engine.worldSystem.requestAgentSpawn('blue');
         }
+    } else if (e.key === 'd') {
+        // 'd' key - Toggle demo mode
+        if (engine.worldSystem) {
+            const demoSystem = engine.worldSystem.getSystem('demo');
+            if (demoSystem) {
+                demoSystem.toggleDemo();
+            } else {
+                console.warn("Demo system not available");
+            }
+        }
     }
 });
 
@@ -447,7 +457,11 @@ instructionsElement.innerHTML = `
         G key: Request Red team strategy<br>
         V key: Request Blue team strategy<br>
         N key: Spawn LLM agent for Red team<br>
-        M key: Spawn LLM agent for Blue team
+        M key: Spawn LLM agent for Blue team<br>
+        <br>
+        <span style="color: #ffcc00; font-weight: bold;">Demo Mode:</span><br>
+        D key: Toggle automated demo<br>
+        (Simulates AI-driven team strategies and specialized agents)
     </div>
 `;
 debugOverlay.appendChild(instructionsElement);
@@ -466,3 +480,48 @@ worldSystem.agentSystem.createDeathEffect = function(x, y, teamId) {
 
 // Start the game
 engine.start();
+
+// Auto-start demo mode after 5 seconds for hackathon presentation
+setTimeout(() => {
+    console.log('🎮 Auto-starting demo mode for hackathon presentation...');
+    
+    // First, ensure LLM system is enabled
+    if (engine.worldSystem) {
+        engine.worldSystem.toggleLLM(true); // Ensure LLM is enabled
+        
+        // Wait a moment for systems to initialize
+        setTimeout(() => {
+            // Try to find the demo system
+            let demoSystem = null;
+            
+            if (engine.worldSystem.getSystem && typeof engine.worldSystem.getSystem === 'function') {
+                demoSystem = engine.worldSystem.getSystem('demo');
+            } else if (engine.worldSystem.llmSystem && engine.worldSystem.llmSystem.demoSystem) {
+                demoSystem = engine.worldSystem.llmSystem.demoSystem;
+            }
+            
+            // Toggle demo if found
+            if (demoSystem) {
+                demoSystem.toggleDemo();
+                console.log('🎮 Demo mode activated successfully!');
+                
+                // Force camera to follow a random agent after a few seconds
+                setTimeout(() => {
+                    if (engine.worldSystem.agentSystem) {
+                        const agents = engine.worldSystem.agentSystem.agents;
+                        if (agents.length > 0) {
+                            // Pick a random agent
+                            const cameraTarget = agents[Math.floor(Math.random() * agents.length)];
+                            engine.cameraSystem.setTarget(cameraTarget);
+                            console.log('📷 Camera following agent automatically');
+                        }
+                    }
+                }, 10000);
+            } else {
+                console.error('⚠️ Could not find demo system. Press D key manually to start demo.');
+            }
+        }, 1000);
+    } else {
+        console.warn('⚠️ World system not properly initialized for demo');
+    }
+}, 5000);

@@ -571,6 +571,11 @@ export class Agent {
         // Update visuals
         this.updateVisuals();
         
+        // Log critical health for demo
+        if (this.health <= 20 && this.health > 0) {
+            console.log(`⚠️ ${this.teamId === 1 ? 'RED' : 'BLUE'} team ${this.role} at critical health (${Math.floor(this.health)}/${Math.floor(this.maxHealth)})`);
+        }
+        
         return actualDamage;
     }
     
@@ -731,7 +736,7 @@ export class Agent {
                 }
             }
         } catch (error) {
-            console.warn("Could not access base system for defense pattern");
+            // Could not access base system
         }
         
         // Create a patrol radius around the base
@@ -763,7 +768,7 @@ export class Agent {
                 }
             }
         } catch (error) {
-            console.warn("Could not access base system for attack pattern");
+            // Could not access base system
         }
         
         // If we couldn't get enemy base, use exploration pattern
@@ -808,6 +813,18 @@ export class Agent {
     }
     
     isDead() {
-        return this.health <= 0;
+        const dead = this.health <= 0;
+        
+        // Log agent death for demo
+        if (dead) {
+            console.log(`💀 ${this.teamId === 1 ? 'RED' : 'BLUE'} team ${this.role.toUpperCase()} agent defeated!`);
+            
+            // Log resource drop if carrying
+            if (this.resourceAmount > 0) {
+                console.log(`💎 Dropped ${this.resourceAmount} ${this.resourceType} resources`);
+            }
+        }
+        
+        return dead;
     }
 }

@@ -5,12 +5,14 @@
  * Coordinates between TeamStrategySystem and SpawnerSystem.
  * Handles backend connection status and UI updates.
  * Optional WebSocket support for real-time updates.
+ * Now includes a demo mode for showcasing capabilities.
  */
 
 import { LLMService } from './index.js';
 import WebSocketClient from './WebSocketClient.js';
 import SpawnerSystem from './SpawnerSystem.js';
 import TeamStrategySystem from './TeamStrategySystem.js';
+import DemoSystem from './DemoSystem.js';
 import serviceInitializer from './ServiceInitializer.js';
 
 class LLMSystem {
@@ -22,6 +24,7 @@ class LLMSystem {
         // Create and register subsystems
         this.teamStrategySystem = new TeamStrategySystem(gameEngine);
         this.spawnerSystem = new SpawnerSystem(gameEngine);
+        this.demoSystem = new DemoSystem(gameEngine);
         
         // Register this system for reinitialization
         serviceInitializer.registerService('LLMSystem', this);
@@ -46,7 +49,12 @@ class LLMSystem {
             }
         });
         
-        console.log('LLM System initialized');
+        // Enable mock responses for hackathon demo
+        this.llmService.enableMockResponses();
+        console.log('🎮 Hackathon Demo Mode: Mock responses enabled for presentation');
+        console.log('💡 Press D to start interactive demo sequence');
+        
+        // LLM System initialized
     }
     
     /**
@@ -56,8 +64,9 @@ class LLMSystem {
         // Register subsystems with game engine
         this.gameEngine.registerSystem('teamStrategy', this.teamStrategySystem);
         this.gameEngine.registerSystem('spawner', this.spawnerSystem);
+        this.gameEngine.registerSystem('demo', this.demoSystem);
         
-        console.log('LLM subsystems registered with game engine');
+        // LLM subsystems registered with game engine
     }
     
     /**
@@ -70,6 +79,7 @@ class LLMSystem {
         // Update subsystems
         this.teamStrategySystem.update(deltaTime);
         this.spawnerSystem.update(deltaTime);
+        this.demoSystem.update(deltaTime);
         
         // Periodically update backend status
         this.statusUpdateTimer += deltaTime;
@@ -95,7 +105,12 @@ class LLMSystem {
      */
     setEnabled(enabled) {
         this.enabled = enabled;
-        console.log(`LLM System ${enabled ? 'enabled' : 'disabled'}`);
+        console.log(`🧠 LLM System ${enabled ? 'ENABLED' : 'DISABLED'} - ${enabled ? 'AI-driven decision making active' : 'AI-driven decision making paused'}`);
+        
+        // Add helpful hint for demo
+        if (enabled) {
+            console.log('💡 TIP: Watch for strategic decisions in console logs');
+        }
     }
     
     /**
@@ -195,7 +210,7 @@ class LLMSystem {
      */
     toggleBackendUsage() {
         this.llmService.useBackend = !this.llmService.useBackend;
-        console.log(`Backend usage: ${this.llmService.useBackend ? 'Enabled' : 'Disabled'}`);
+        console.log(`🔄 AIQToolkit backend ${this.llmService.useBackend ? 'ENABLED' : 'DISABLED'} - ${this.llmService.useBackend ? 'Using advanced workflows' : 'Using direct LLM calls'}`);
         this.updateBackendStatus();
     }
     
@@ -231,7 +246,12 @@ class LLMSystem {
             this.websocketClient.disconnect();
         }
         
-        console.log(`WebSocket: ${this.websocketEnabled ? 'Enabled' : 'Disabled'}`);
+        console.log(`📡 WebSocket ${this.websocketEnabled ? 'ENABLED' : 'DISABLED'} - ${this.websocketEnabled ? 'Real-time strategic updates active' : 'Strategic updates paused'}`);
+        
+        // Add helpful hint for demo
+        if (this.websocketEnabled) {
+            console.log('💡 TIP: Backend can now send real-time directives to agents');
+        }
         this.updateBackendStatus();
     }
     

@@ -45,15 +45,11 @@ class TeamStrategySystem {
             const apiKey = env.LLM_API_KEY || '';
             const useMockResponses = env.USE_MOCK_RESPONSES === 'true';
             
-            if (apiKey && !useMockResponses) {
-                console.log('🔑 Using OpenAI API for TeamStrategySystem');
-            } else {
-                console.log('🤖 Using mock responses for TeamStrategySystem');
+            if (!apiKey || useMockResponses) {
                 this.llmService.enableMockResponses();
             }
         } else {
             // Enable mock responses if environment not configured
-            console.log('⚠️ Environment not initialized. Using mock responses for TeamStrategySystem.');
             this.llmService.enableMockResponses();
         }
     }
@@ -114,7 +110,7 @@ class TeamStrategySystem {
                     lastUpdated: Date.now()
                 };
                 
-                console.log(`✅ Updated ${teamId} team strategy:`, newStrategy.description);
+                console.log(`💡 Updated ${teamId.toUpperCase()} team strategy: ${newStrategy.strategy.toUpperCase()} (${newStrategy.focus}) - ${newStrategy.description}`);
                 
                 // Display the updated strategy in the UI
                 this.displayTeamStrategy(teamId, this.teamStrategies[teamId]);
