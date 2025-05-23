@@ -22,6 +22,14 @@ export class DecisionSystem {
         // This would normally configure the LLM API with keys, etc.
         // For demo purposes, we'll just use the debug mode
         console.log("Initializing Decision System with simulated LLM responses");
+        
+        // To use real API, uncomment and provide your API key
+        // const apiKey = process.env.OPENAI_API_KEY || '';
+        // if (apiKey) {
+        //     this.llmInterface.configure(apiKey, null, 'gpt-4.1-mini');
+        //     this.llmInterface.isDebugMode = false;
+        //     console.log("Using real OpenAI API with gpt-4.1-mini model");
+        // }
     }
     
     // Get or create memory for an agent
@@ -145,7 +153,23 @@ ${lastDecision ? `Last Decision:
 - Target: ${lastDecision.target}
 - Reasoning: ${lastDecision.reasoning}` : 'No previous decision.'}
 
-Please make a decision for this agent based on its current situation and personality.`;
+Available actions:
+- EXPLORE: Move to explore the environment (targets: RANDOM, UNEXPLORED, RESOURCE_RICH)
+- COLLECT: Gather resources (targets: NEAREST_RESOURCE, ENERGY, MATERIALS, DATA)
+- RETURN_TO_BASE: Return to home base (target: BASE)
+- ATTACK: Engage enemy (targets: NEAREST_ENEMY, WEAKEST_ENEMY, RESOURCE_CARRIER)
+- FLEE: Move away from danger (targets: BASE, FROM_ENEMIES, ALLY)
+- CLAIM_TERRITORY: Expand territory control (targets: UNCLAIMED, ENEMY, FRONTIER)
+- SCOUT_ENEMY: Move toward enemy territory (targets: ENEMY_TERRITORY, DANGER_ZONE)
+- DEFEND: Guard an area (targets: BASE, ALLY, TERRITORY)
+- HEAL: Move to a location to heal (target: BASE)
+
+Please respond with a decision in this format:
+{
+  "action": "ACTION_NAME",
+  "target": "TARGET_NAME",
+  "reasoning": "Brief explanation of decision"
+}`;
     }
     
     // Calculate additional options for the LLM call

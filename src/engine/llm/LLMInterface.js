@@ -8,11 +8,14 @@ export class LLMInterface {
         this.isDebugMode = true; // Set to false to use real API
         this.responseCache = new Map(); // Cache for simulated responses
         this.responseDelay = 200; // Simulated response delay in ms
+        this.model = "gpt-4.1-mini"; // Default model
     }
 
-    async configure(apiKey, apiEndpoint) {
+    async configure(apiKey, apiEndpoint, model = "gpt-4.1-mini") {
         this.apiKey = apiKey;
         this.apiEndpoint = apiEndpoint;
+        this.model = model;
+        console.log(`Configured LLM interface with model: ${this.model}`);
     }
 
     // Main method to get LLM responses
@@ -27,14 +30,127 @@ export class LLMInterface {
     // Method to get a real LLM response from an API
     async getRealLLMResponse(prompt, options = {}) {
         try {
-            // This would be replaced with actual API call
-            // For now, we'll just simulate a response
-            console.warn('Real LLM API not implemented yet, using simulated response');
-            return this.getDebugResponse(prompt, options);
+            if (!this.apiKey) {
+                console.warn('API key not configured, using simulated response');
+                return this.getDebugResponse(prompt, options);
+            }
+
+            // Prepare the request to OpenAI API
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.apiKey}`
+            };
+
+            const requestBody = {
+                model: this.model,
+                messages: [
+                    { role: "system", content: "You are an AI agent in a strategic game. Your responses should be focused on making decisions that benefit your team." },
+                    { role: "user", content: prompt }
+                ],
+                temperature: 0.7,
+                max_tokens: 250
+            };
+
+            // Log request for debugging
+            console.log(`Sending request to ${this.apiEndpoint || 'OpenAI API'} with model ${this.model}`);
+
+            // Make the API request
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Error from OpenAI API:', errorData);
+                return this.getFallbackResponse(prompt);
+            }
+
+            const data = await response.json();
+            const responseText = data.choices[0].message.content;
+            
+            // Parse the response
+            try {
+                // Handle different prompt types
+                if (prompt.includes('AGENT_DECISION')) {
+                    return this.parseDecisionResponse(responseText);
+                } else if (prompt.includes('GENERATE_PERSONALITY')) {
+                    return this.parsePersonalityResponse(responseText);
+                } else {
+                    return this.getFallbackResponse(prompt);
+                }
+            } catch (parseError) {
+                console.error('Error parsing LLM response:', parseError);
+                return this.getFallbackResponse(prompt);
+            }
         } catch (error) {
             console.error('Error getting LLM response:', error);
             return this.getFallbackResponse(prompt);
         }
+    }
+
+    // Parse an LLM response for a decision
+    parseDecisionResponse(responseText) {
+        // First try to parse as JSON
+        try {
+            const jsonResponse = JSON.parse(responseText);
+            if (jsonResponse.action && jsonResponse.target) {
+                return jsonResponse;
+            }
+        } catch (e) {
+            // Not valid JSON, continue with text parsing
+        }
+
+        // Try to extract action and target from text response
+        const actionMatch = responseText.match(/action:?\s*([A-Z_]+)/i);
+        const targetMatch = responseText.match(/target:?\s*([A-Z_]+)/i);
+        const reasoningMatch = responseText.match(/reasoning:?\s*(.+?)(?:\n|$)/i);
+
+        const action = actionMatch ? actionMatch[1].toUpperCase() : 'EXPLORE';
+        const target = targetMatch ? targetMatch[1].toUpperCase() : 'RANDOM';
+        const reasoning = reasoningMatch ? reasoningMatch[1] : 'No reasoning provided.';
+
+        return {
+            action: action,
+            target: target,
+            reasoning: reasoning
+        };
+    }
+
+    // Parse an LLM response for personality generation
+    parsePersonalityResponse(responseText) {
+        // First try to parse as JSON
+        try {
+            const jsonResponse = JSON.parse(responseText);
+            if (jsonResponse.designation || jsonResponse.traits) {
+                return jsonResponse;
+            }
+        } catch (e) {
+            // Not valid JSON, continue with text parsing
+        }
+
+        // Try to extract personality elements from text response
+        const designationMatch = responseText.match(/designation:?\s*([^\n]+)/i);
+        const traitsMatch = responseText.match(/traits:?\s*([^\n]+)/i);
+        const backgroundMatch = responseText.match(/background:?\s*([^\n]+)/i);
+        const focusMatch = responseText.match(/focus:?\s*([^\n]+)/i);
+
+        const traits = traitsMatch ? 
+            traitsMatch[1].split(/,\s*/).map(t => t.trim().toLowerCase()) : 
+            ['adaptive'];
+
+        return {
+            designation: designationMatch ? designationMatch[1] : 'Agent',
+            traits: traits,
+            background: backgroundMatch ? backgroundMatch[1] : 'Standard issue unit',
+            focus: focusMatch ? focusMatch[1] : 'Mission completion',
+            preferences: {
+                resourcePreference: Math.random() > 0.5 ? 'energy' : 'materials',
+                territoryPreference: Math.random() > 0.5 ? 'frontier' : 'consolidation',
+                combatStance: Math.random() > 0.7 ? 'aggressive' : Math.random() > 0.5 ? 'defensive' : 'evasive'
+            }
+        };
     }
 
     // Generate a simulated response for debug/testing
