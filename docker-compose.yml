@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  frontend:
+    image: node:18-alpine
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    working_dir: /app
+    command: npm start
+    ports:
+      - "3000:3000"
+    environment:
+      - API_ENDPOINT=http://backend:8000/api
+    networks:
+      - ai-territory-network
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ENVIRONMENT=development
+      - LOG_LEVEL=debug
+      - ALLOWED_ORIGINS=http://localhost:3000,http://frontend:3000
+    networks:
+      - ai-territory-network
+
+networks:
+  ai-territory-network:
+    driver: bridge

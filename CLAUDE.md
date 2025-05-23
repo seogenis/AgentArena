@@ -7,15 +7,15 @@ Building a browser-based strategic game where LLM-powered teams create and contr
 Status: In Progress 🔄
 
 ## Current Todo List:
-- [ ] Set up Python backend with FastAPI and AIQToolkit
-- [ ] Design AIQToolkit workflows for team strategy generation
-- [ ] Create AIQToolkit workflows for agent creation and specialization
-- [ ] Implement REST API endpoints for frontend communication
+- [x] Set up Python backend with FastAPI and AIQToolkit
+- [x] Design AIQToolkit workflows for team strategy generation
+- [x] Create AIQToolkit workflows for agent creation and specialization
+- [x] Implement REST API endpoints for frontend communication
 - [ ] Modify JavaScript LLMService to communicate with Python backend
-- [ ] Add WebSocket support for real-time updates (optional)
+- [x] Add WebSocket support for real-time updates (optional)
 - [ ] Enhance visualization of team strategies and agent decisions
 - [ ] Implement fallback mechanism when backend is unavailable
-- [ ] Containerize frontend and backend for easier deployment
+- [x] Containerize frontend and backend for easier deployment
 
 ## Team Structure
 The project is divided into three teams for Stage 6 implementation:
@@ -57,6 +57,13 @@ The project is divided into three teams for Stage 6 implementation:
 - Schedule an initial joint planning session to define API contracts
 - Follow the integration checkpoints defined in the coordination guidelines
 - Maintain regular communication through the defined channels
+
+## Backend Development Commands
+- Setup Python environment: `python -m venv venv && source venv/bin/activate`
+- Install dependencies: `pip install -r backend/requirements.txt`
+- Run backend server: `cd backend && uvicorn app.main:app --reload`
+- Run with Docker: `docker-compose up`
+- Run backend tests: `cd backend && pytest`
 
 ## Completed:
 - [x] Set up project repository
@@ -189,6 +196,18 @@ The project is divided into three teams for Stage 6 implementation:
 - Added keyboard controls for testing LLM features
 - Enhanced debug overlay to show team strategies
 - Set up mock response system for development without API keys
+
+## Stage 6 Implementation Notes:
+- Set up Python backend with FastAPI and AIQToolkit integration
+- Created AIQToolkit workflows for team strategy generation and agent creation
+- Implemented REST API endpoints for frontend communication
+- Added WebSocket support for real-time game state updates
+- Implemented fallback mechanisms for when AIQToolkit fails
+- Created Docker configuration for containerized deployment
+- Set up testing framework for backend components
+- Added support for team ID conversion between formats
+- Designed robust error handling for backend services
+- Created comprehensive documentation for backend usage
 
 ## Stage 6 Implementation Plan:
 - Set up Python backend with FastAPI
