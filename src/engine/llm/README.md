@@ -37,6 +37,42 @@ window.toggleMockResponses(false);
 window.getAPIConfig();
 ```
 
+## AIQToolkit Python Backend (Stage 6)
+
+In Stage 6, we've added support for communicating with a Python backend that uses NVIDIA's AIQToolkit:
+
+### Backend Configuration
+
+The backend is configured to connect to `http://localhost:8000/api` by default. You can check or toggle the backend connection:
+
+```js
+// Check backend connection status
+window.checkBackendConnection();
+
+// Toggle backend usage (use direct LLM if false)
+window.toggleBackendUsage(true/false);
+```
+
+### WebSocket Support (Optional)
+
+For real-time updates, WebSocket support is available:
+
+```js
+// Enable WebSocket connection
+window.enableWebSocket();
+
+// Disable WebSocket connection
+window.disableWebSocket();
+```
+
+## Fallback Mechanism
+
+The system implements a graceful fallback mechanism:
+
+1. Try Python backend with AIQToolkit
+2. If unavailable, fall back to direct LLM API calls
+3. If no API key, use mock responses
+
 ## Debugging LLM Calls
 
 To monitor what's happening with LLM calls:
@@ -72,6 +108,8 @@ The Agent Arena game uses several LLM-based systems:
 - `V` key: Request new Blue team strategy
 - `N` key: Spawn LLM agent for Red team
 - `M` key: Spawn LLM agent for Blue team
+- `B` key: Toggle backend usage (Stage 6)
+- `W` key: Toggle WebSocket connection (Stage 6)
 
 ## Troubleshooting
 
@@ -81,6 +119,13 @@ If you encounter issues with the LLM API:
 2. Ensure you have sufficient OpenAI API credits
 3. Try enabling mock mode with `window.toggleMockResponses(true)`
 4. Check the browser console for error messages
+
+For backend connection issues:
+
+1. Verify the backend server is running at the expected URL
+2. Check browser console for connection errors
+3. Look for CORS issues if running on different domains
+4. Verify the backend API endpoints match what the frontend expects
 
 For development, you can set your API key in the console with:
 ```js
