@@ -12,6 +12,7 @@ services:
       - "3000:3000"
     environment:
       - API_ENDPOINT=http://backend:8000/api
+      - LLM_API_KEY=${OPENAI_API_KEY}
     networks:
       - ai-territory-network
 

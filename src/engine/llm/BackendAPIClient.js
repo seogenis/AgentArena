@@ -12,6 +12,13 @@ class BackendAPIClient {
         this.isConnected = false;
         this.connectionCheckInterval = null;
         
+        // Adjust URL for Docker environments
+        if (window.location.hostname !== 'localhost' && this.baseUrl.includes('localhost')) {
+            const newHost = window.location.hostname;
+            this.baseUrl = this.baseUrl.replace('localhost', newHost);
+            console.log('Adjusted backend API URL for Docker:', this.baseUrl);
+        }
+        
         // Check connection on initialization
         this.checkConnection();
     }
@@ -30,7 +37,25 @@ class BackendAPIClient {
      */
     async checkConnection() {
         try {
-            const response = await fetch(`${this.baseUrl.split('/api')[0]}`);
+            // First try the health check endpoint
+            const url = `${this.baseUrl.split('/api')[0]}`;
+            console.log(`Checking backend connection at: ${url}`);
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                // Important for fetch to work in Docker networking
+                mode: 'cors',
+                cache: 'no-cache',
+                credentials: 'same-origin',
+                redirect: 'follow',
+                referrerPolicy: 'no-referrer',
+                timeout: 5000
+            });
+            
             this.isConnected = response.ok;
             return this.isConnected;
         } catch (error) {

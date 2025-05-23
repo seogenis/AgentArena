@@ -264,9 +264,9 @@ To fully validate the integration:
 
 ## Key Keyboard Controls
 
-- **B key** - Toggle between backend mode and direct LLM mode
+- **U key** - Toggle between backend mode and direct LLM mode
 - **W key** - Toggle WebSocket connection
 - **G key** - Request new strategy for Red team
-- **B key** - Request new strategy for Blue team
+- **V key** - Request new strategy for Blue team
 - **N key** - Request new agent for Red team
 - **M key** - Request new agent for Blue team

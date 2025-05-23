@@ -19,21 +19,23 @@ class TeamStrategySystem {
         ServiceInitializer.registerService('TeamStrategySystem', this);
         
         // Strategy cache to avoid too frequent API calls
-        this.teamStrategies = {
-            red: {
-                strategy: 'balanced',
-                focus: 'resources',
-                priorities: ['collect_energy', 'expand_territory', 'defend_base'],
-                description: 'Default balanced strategy focusing on resources',
-                lastUpdated: Date.now()
-            },
-            blue: {
-                strategy: 'balanced',
-                focus: 'resources',
-                priorities: ['collect_energy', 'expand_territory', 'defend_base'],
-                description: 'Default balanced strategy focusing on resources',
-                lastUpdated: Date.now()
-            }
+        const redTeamId = this.normalizeTeamId('red');
+        const blueTeamId = this.normalizeTeamId('blue');
+        
+        this.teamStrategies = {};
+        this.teamStrategies[redTeamId] = {
+            strategy: 'balanced',
+            focus: 'resources',
+            priorities: ['collect_energy', 'expand_territory', 'defend_base'],
+            description: 'Default balanced strategy focusing on resources',
+            lastUpdated: Date.now()
+        };
+        this.teamStrategies[blueTeamId] = {
+            strategy: 'balanced',
+            focus: 'resources',
+            priorities: ['collect_energy', 'expand_territory', 'defend_base'],
+            description: 'Default balanced strategy focusing on resources',
+            lastUpdated: Date.now()
         };
         
         // Time between strategy updates (in milliseconds)
@@ -64,15 +66,17 @@ class TeamStrategySystem {
      */
     update(deltaTime) {
         const currentTime = Date.now();
+        const redTeamId = this.normalizeTeamId('red');
+        const blueTeamId = this.normalizeTeamId('blue');
         
         // Update red team strategy if needed
-        if (currentTime - this.teamStrategies.red.lastUpdated >= this.strategyUpdateInterval) {
-            this.updateTeamStrategy('red');
+        if (currentTime - this.teamStrategies[redTeamId].lastUpdated >= this.strategyUpdateInterval) {
+            this.updateTeamStrategy(redTeamId);
         }
         
         // Update blue team strategy if needed
-        if (currentTime - this.teamStrategies.blue.lastUpdated >= this.strategyUpdateInterval) {
-            this.updateTeamStrategy('blue');
+        if (currentTime - this.teamStrategies[blueTeamId].lastUpdated >= this.strategyUpdateInterval) {
+            this.updateTeamStrategy(blueTeamId);
         }
     }
 
@@ -81,8 +85,10 @@ class TeamStrategySystem {
      * @param {string} teamId - ID of the team to update
      */
     async updateTeamStrategy(teamId) {
+        // Normalize team ID for consistent handling
+        const normalizedTeamId = this.normalizeTeamId(teamId);
         const gameState = this.getGameState();
-        const prompt = PromptTemplates.teamStrategy(gameState, teamId);
+        const prompt = PromptTemplates.teamStrategy(gameState, normalizedTeamId);
         
         try {
             // Set a timeout option for the LLM service
@@ -93,7 +99,7 @@ class TeamStrategySystem {
             try {
                 newStrategy = JSON.parse(response);
             } catch (parseError) {
-                console.error(`Failed to parse LLM response for ${teamId} team:`, parseError);
+                console.error(`Failed to parse LLM response for ${normalizedTeamId} team:`, parseError);
                 console.log(`Raw response:`, response);
                 throw new Error('Invalid JSON response from LLM');
             }
@@ -109,20 +115,20 @@ class TeamStrategySystem {
                     newStrategy.source = 'Mock';
                 }
                 
-                this.teamStrategies[teamId] = {
+                this.teamStrategies[normalizedTeamId] = {
                     ...newStrategy,
                     lastUpdated: Date.now()
                 };
                 
-                console.log(`✅ Updated ${teamId} team strategy:`, newStrategy.description);
+                console.log(`✅ Updated ${normalizedTeamId} team strategy:`, newStrategy.description);
                 
                 // Display the updated strategy in the UI
-                this.displayTeamStrategy(teamId, this.teamStrategies[teamId]);
+                this.displayTeamStrategy(normalizedTeamId, this.teamStrategies[normalizedTeamId]);
             } else {
-                console.warn(`⚠️ Invalid strategy response for ${teamId} team, using fallback strategy`);
+                console.warn(`⚠️ Invalid strategy response for ${normalizedTeamId} team, using fallback strategy`);
                 
                 // Use a fallback strategy instead of keeping old one
-                this.teamStrategies[teamId] = {
+                this.teamStrategies[normalizedTeamId] = {
                     strategy: "balanced",
                     focus: "resources",
                     priorities: ["collect_energy", "expand_territory", "defend_base"],
@@ -132,10 +138,10 @@ class TeamStrategySystem {
                 };
                 
                 // Display the fallback strategy in the UI
-                this.displayTeamStrategy(teamId, this.teamStrategies[teamId]);
+                this.displayTeamStrategy(normalizedTeamId, this.teamStrategies[normalizedTeamId]);
             }
         } catch (error) {
-            console.error(`Error updating ${teamId} team strategy:`, error);
+            console.error(`Error updating ${normalizedTeamId} team strategy:`, error);
             // No need to update lastUpdated since we're keeping the old strategy
         }
     }
@@ -237,7 +243,8 @@ class TeamStrategySystem {
      * @returns {Object} Current team strategy
      */
     getTeamStrategy(teamId) {
-        return this.teamStrategies[teamId];
+        const normalizedTeamId = this.normalizeTeamId(teamId);
+        return this.teamStrategies[normalizedTeamId];
     }
 
     /**
@@ -246,15 +253,16 @@ class TeamStrategySystem {
      * @param {Object} strategy - New strategy object
      */
     setTeamStrategy(teamId, strategy) {
+        const normalizedTeamId = this.normalizeTeamId(teamId);
         if (this.validateTeamStrategy(strategy)) {
-            this.teamStrategies[teamId] = {
+            this.teamStrategies[normalizedTeamId] = {
                 ...strategy,
                 source: 'Manual',
                 lastUpdated: Date.now()
             };
             
             // Display the manually set strategy in the UI
-            this.displayTeamStrategy(teamId, this.teamStrategies[teamId]);
+            this.displayTeamStrategy(normalizedTeamId, this.teamStrategies[normalizedTeamId]);
         }
     }
     
@@ -267,7 +275,9 @@ class TeamStrategySystem {
         const debugOverlay = document.getElementById('debug-overlay');
         if (!debugOverlay) return;
         
-        const teamColor = teamId === 'team1' || teamId === 'red' ? 'Red' : 'Blue';
+        // Normalize team ID
+        const normalizedTeamId = this.normalizeTeamId(teamId);
+        const teamColor = normalizedTeamId === 'red' ? 'Red' : 'Blue';
         const strategyElement = document.getElementById(`${teamColor.toLowerCase()}-team-strategy`);
         
         if (strategyElement) {
@@ -324,6 +334,23 @@ class TeamStrategySystem {
      */
     forceStrategyUpdate(teamId) {
         this.updateTeamStrategy(teamId);
+    }
+    
+    /**
+     * Normalize team ID to consistent 'red'/'blue' format
+     * @param {string} teamId - Team ID to normalize
+     * @returns {string} - Normalized team ID ('red' or 'blue')
+     */
+    normalizeTeamId(teamId) {
+        const teamIdMap = {
+            "team1": "red", 
+            "team2": "blue", 
+            "1": "red", 
+            "2": "blue",
+            "red": "red",
+            "blue": "blue"
+        };
+        return teamIdMap[teamId] || (teamId.toLowerCase().includes('red') ? 'red' : 'blue');
     }
 }
 

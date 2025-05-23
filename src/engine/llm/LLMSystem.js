@@ -39,7 +39,7 @@ class LLMSystem {
         
         // Add key bindings
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'b') {
+            if (e.key === 'u') {
                 this.toggleBackendUsage();
             } else if (e.key === 'w') {
                 this.toggleWebSocket();
@@ -142,7 +142,7 @@ class LLMSystem {
         // Controls hint
         const controlsElement = document.createElement('div');
         controlsElement.className = 'controls-hint';
-        controlsElement.innerHTML = 'Press <b>B</b> to toggle backend, <b>W</b> to toggle WebSocket';
+        controlsElement.innerHTML = 'Press <b>U</b> to toggle backend, <b>W</b> to toggle WebSocket';
         debugOverlay.appendChild(controlsElement);
         
         // Update status based on LLMService

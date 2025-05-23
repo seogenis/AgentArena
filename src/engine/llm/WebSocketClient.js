@@ -14,6 +14,13 @@ class WebSocketClient {
         this.messageHandlers = new Map();
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
+        
+        // Adjust URL for Docker environments at initialization
+        if (window.location.hostname !== 'localhost' && this.url.includes('localhost')) {
+            const newHost = window.location.hostname;
+            this.url = this.url.replace('localhost', newHost);
+            console.log('Adjusted WebSocket URL for Docker during initialization:', this.url);
+        }
     }
 
     /**
@@ -33,10 +40,23 @@ class WebSocketClient {
         }
 
         try {
-            this.socket = new WebSocket(`${this.url}/${this.clientId}`);
+            // Check for Docker-compatible URL when running in containers
+            let wsUrl = this.url;
+            if (window.location.hostname === 'localhost' && wsUrl.includes('localhost')) {
+                // We're in local development, URL is fine
+                console.log('Using localhost WebSocket URL:', wsUrl);
+            } else if (window.location.hostname !== 'localhost' && wsUrl.includes('localhost')) {
+                // We might be in Docker - adjust WebSocket URL to match current hostname
+                const newHost = window.location.hostname;
+                wsUrl = wsUrl.replace('localhost', newHost);
+                console.log('Adjusted WebSocket URL for Docker:', wsUrl);
+            }
+            
+            this.socket = new WebSocket(`${wsUrl}/${this.clientId}`);
+            console.log(`WebSocket connecting to: ${wsUrl}/${this.clientId}`);
             
             this.socket.onopen = () => {
-                console.log('WebSocket connected');
+                console.log('WebSocket connected successfully');
                 this.isConnected = true;
                 this.reconnectAttempts = 0;
             };
