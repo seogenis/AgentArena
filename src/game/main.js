@@ -4,6 +4,7 @@ import { CameraSystem } from '../engine/CameraSystem.js';
 import { WorldSystem } from '../engine/world/WorldSystem.js';
 import { Rectangle } from '../engine/shapes/Rectangle.js';
 import { Circle } from '../engine/shapes/Circle.js';
+import '../engine/llm/GlobalHelpers.js'; // Import global helper functions for API configuration
 
 // Initialize the game engine
 const engine = new GameEngine('game-canvas');
@@ -19,6 +20,9 @@ engine.setCameraSystem(cameraSystem);
 // Initialize world system with render system reference (updated for Stage 3)
 const worldSystem = new WorldSystem(engine.width * 2, engine.height * 2, 30, renderSystem);
 engine.worldSystem = worldSystem;
+
+// Make the game engine globally accessible for the API configurator
+window.gameEngine = engine;
 
 // No longer need a separate camera target as we can follow an agent
 let cameraTarget = null;
@@ -219,6 +223,18 @@ window.addEventListener('keydown', e => {
             const iconsVisible = engine.worldSystem.toggleDecisionIcons();
             console.log(`Decision icons ${iconsVisible ? 'visible' : 'hidden'}`);
         }
+    } else if (e.key === 'm') {
+        // 'm' key - Toggle between real API and debug mode
+        if (engine.worldSystem) {
+            const success = engine.worldSystem.toggleAPIMode();
+            
+            if (success) {
+                const isDebugMode = engine.worldSystem.agentSystem.decisionSystem.llmInterface.isDebugMode;
+                console.log(`Switched to ${isDebugMode ? 'debug mode with simulated' : 'real API with'} LLM responses`);
+            } else {
+                alert("Please set window.OPENAI_API_KEY in the console first");
+            }
+        }
     }
 });
 
@@ -404,7 +420,8 @@ instructionsElement.innerHTML = `
         LLM Controls:<br>
         L key: Toggle LLM control for agents<br>
         V key: Toggle agent vision cones<br>
-        I key: Toggle decision icons
+        I key: Toggle decision icons<br>
+        M key: Toggle between real API and debug mode
     </div>
 `;
 debugOverlay.appendChild(instructionsElement);

@@ -22,7 +22,7 @@ export class AgentSystem {
         
         // Configuration
         this.useLLMControl = true; // Toggle for LLM-based decision making
-        this.decisionInterval = 2000; // Time between LLM decisions (ms)
+        this.decisionInterval = 5000; // Time between LLM decisions (ms) - increased to reduce API load
         this.lastDecisionTime = 0;
         this.showPerception = false; // Toggle for perception visualization
     }
@@ -109,10 +109,9 @@ export class AgentSystem {
                 continue;
             }
             
-            // Update agent using LLM decisions if enabled
-            if (this.useLLMControl && agent.useLLM && this.observabilitySystem && this.actionExecutor) {
-                this.updateAgentWithLLM(agent, deltaTime, timestamp);
-            }
+            // Individual agent updates are now handled in the periodic batch update
+            // to avoid double API calls (see makeLLMDecisions method)
+            // LLM decisions are now made in batches, not per frame for each agent
             
             // Standard update for agent physics and visuals
             agent.update(deltaTime, this.hexGrid);

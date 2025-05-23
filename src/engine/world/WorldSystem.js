@@ -5,6 +5,7 @@ import { BaseSystem } from '../bases/BaseSystem.js';
 import { AgentSystem } from '../agents/AgentSystem.js';
 import { CollisionSystem } from '../utils/CollisionSystem.js';
 import { CombatSystem } from '../utils/CombatSystem.js';
+import { APIConfigurer } from '../llm/APIConfigurer.js';
 
 export class WorldSystem {
     constructor(width, height, hexSize = 40, renderSystem) {
@@ -37,6 +38,9 @@ export class WorldSystem {
         
         // Initialize agent system
         this.agentSystem.initialize();
+        
+        // Initialize API configurer
+        this.apiConfigurer = new APIConfigurer(this);
         
         // Victory conditions
         this.gameOver = false;
@@ -313,6 +317,31 @@ export class WorldSystem {
     // Toggle decision icon visibility
     toggleDecisionIcons() {
         return this.agentSystem.toggleDecisionIcons();
+    }
+    
+    // Toggle between real API and debug mode
+    toggleAPIMode(useDebug = null) {
+        if (!this.apiConfigurer) return false;
+        
+        const llmInterface = this.agentSystem.decisionSystem.llmInterface;
+        const currentMode = llmInterface.isDebugMode;
+        
+        // If useDebug is specified, set that mode, otherwise toggle
+        const newDebugMode = useDebug !== null ? useDebug : !currentMode;
+        
+        if (newDebugMode) {
+            // Enable debug mode (simulated responses)
+            return this.apiConfigurer.enableDebugMode();
+        } else {
+            // Try to use real API with the window API key
+            const apiKey = typeof window !== 'undefined' ? window.OPENAI_API_KEY || '' : '';
+            if (apiKey) {
+                return this.apiConfigurer.configureAPI(apiKey);
+            } else {
+                console.warn("No API key found. Please set window.OPENAI_API_KEY first");
+                return false;
+            }
+        }
     }
     
     // Add debug information for overlay

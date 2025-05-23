@@ -11,7 +11,7 @@ export class DecisionSystem {
         this.fallbackMode = false; // Use fallback if API is not available
         
         // Configuration
-        this.minDecisionInterval = 2000; // Minimum ms between decision requests (2 seconds)
+        this.minDecisionInterval = 5000; // Minimum ms between decision requests (5 seconds) - increased to reduce API load
         this.decisionCooldowns = new Map(); // Track cooldowns for each agent
         
         // Initialize
@@ -24,12 +24,12 @@ export class DecisionSystem {
         console.log("Initializing Decision System with simulated LLM responses");
         
         // To use real API, uncomment and provide your API key
-        // const apiKey = process.env.OPENAI_API_KEY || '';
-        // if (apiKey) {
-        //     this.llmInterface.configure(apiKey, null, 'gpt-4.1-mini');
-        //     this.llmInterface.isDebugMode = false;
-        //     console.log("Using real OpenAI API with gpt-4.1-mini model");
-        // }
+        const apiKey = typeof window !== 'undefined' ? window.OPENAI_API_KEY || '' : '';
+        if (apiKey) {
+            this.llmInterface.configure(apiKey, null, 'gpt-4.1-mini');
+            this.llmInterface.isDebugMode = false;
+            console.log("Using real OpenAI API with gpt-4.1-mini model");
+        }
     }
     
     // Get or create memory for an agent

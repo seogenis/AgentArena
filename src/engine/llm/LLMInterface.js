@@ -5,7 +5,7 @@ export class LLMInterface {
     constructor() {
         this.apiKey = null;
         this.apiEndpoint = null;
-        this.isDebugMode = true; // Set to false to use real API
+        this.isDebugMode = true; // Set to true to use simulated responses by default
         this.responseCache = new Map(); // Cache for simulated responses
         this.responseDelay = 200; // Simulated response delay in ms
         this.model = "gpt-4.1-mini"; // Default model
@@ -55,7 +55,7 @@ export class LLMInterface {
             console.log(`Sending request to ${this.apiEndpoint || 'OpenAI API'} with model ${this.model}`);
 
             // Make the API request
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            const response = await fetch(this.apiEndpoint || 'https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify(requestBody)
