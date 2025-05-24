@@ -2,6 +2,8 @@
 
 AgentArena is a browser-based strategic game where LLM-powered teams compete for resources and territory. AI agents with specialized roles (collectors, explorers, defenders, attackers) gather resources, claim territory, and engage in combat to achieve victory through territorial control, resource domination, or opponent elimination.
 
+https://www.loom.com/share/ff0ae60e7e3c48efbe8104184339c155?sid=83434cff-77c6-4acc-910b-d2e0e32d19f8
+
 ## Project Description
 
 AgentArena demonstrates how AI teams develop strategies and make decisions in competitive scenarios. The project combines a JavaScript game engine with NVIDIA's AIQToolkit via a Python backend to enable sophisticated agent behaviors and team coordination, creating a visually engaging platform for exploring emergent AI strategies.
