@@ -464,5 +464,42 @@ worldSystem.agentSystem.createDeathEffect = function(x, y, teamId) {
     worldSystem.createDeathEffect(x, y, teamId);
 };
 
+// Set up automatic agent spawning
+let lastAgentSpawnTime = 0;
+const agentSpawnInterval = 8000; // 8 seconds in milliseconds
+
+// Add automatic agent spawning to the game loop
+const originalEnhancedGameLoop = enhancedGameLoop;
+const autoSpawnGameLoop = function(timestamp) {
+    // Call the original game loop function
+    originalEnhancedGameLoop.call(this, timestamp);
+    
+    // Check if it's time to spawn new agents
+    if (this.worldSystem && !this.worldSystem.gameOver && timestamp - lastAgentSpawnTime >= agentSpawnInterval) {
+        // Available agent types
+        const agentTypes = ['collector', 'explorer', 'defender', 'attacker'];
+        
+        // Randomly select agent types for each team
+        const redAgentType = agentTypes[Math.floor(Math.random() * agentTypes.length)];
+        const blueAgentType = agentTypes[Math.floor(Math.random() * agentTypes.length)];
+        
+        // Spawn one agent for each team with random types
+        this.worldSystem.createAgent(1, redAgentType); // Red team
+        this.worldSystem.createAgent(2, blueAgentType); // Blue team
+        
+        console.log(`Auto-spawned agents: Red ${redAgentType}, Blue ${blueAgentType}`);
+        
+        // Update the last spawn time
+        lastAgentSpawnTime = timestamp;
+        
+        // Update the world info to reflect new agents
+        updateWorldInfo();
+    }
+};
+
+// Rebind the game loop
+engine._boundGameLoop = autoSpawnGameLoop.bind(engine);
+engine.gameLoop = engine._boundGameLoop;
+
 // Start the game
 engine.start();
