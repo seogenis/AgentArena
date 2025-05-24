@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import WebSocket, WebSocketDisconnect
 import json
 import os
-from typing import Dict
+from typing import Dict, List
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -12,9 +12,10 @@ load_dotenv()
 app = FastAPI(title="AI Territory Game Backend")
 
 # Configure CORS
+allowed_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_origins=allowed_origins,  # Frontend URLs
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -41,7 +42,7 @@ manager = ConnectionManager()
 
 @app.get("/")
 async def root():
-    return {"message": "AI Territory Game Backend is running"}
+    return {"message": "AI Territory Game Backend is running", "mock_mode": os.getenv("USE_MOCK_RESPONSES", "true").lower() == "true"}
 
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
@@ -51,8 +52,8 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             data = await websocket.receive_text()
             # Process game state and generate directives
             game_state = json.loads(data)
-            # TODO: Generate directives using AIQToolkit
-            directives = {"message": "Received game state"}  # Placeholder
+            # Using fallback directives since AIQToolkit is not available
+            directives = {"message": "Received game state", "status": "mock_mode"}
             await manager.send_personal_message(json.dumps(directives), client_id)
     except WebSocketDisconnect:
         manager.disconnect(client_id)

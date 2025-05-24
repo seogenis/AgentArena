@@ -1,14 +1,22 @@
-import aiq
+# Import the necessary modules
+# import aiq  # Commented out since aiqtoolkit is not available
 from ..schemas.agent_spec import AgentSpecification, AgentAttributes
 from ..schemas.strategy import TeamStrategy
 import json
 import os
 import logging
 from typing import Dict, List
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Check if we should use mock responses
+USE_MOCK_RESPONSES = os.getenv("USE_MOCK_RESPONSES", "true").lower() == "true"
 
 class AgentRequest:
     """Request structure for agent creation"""
@@ -21,6 +29,11 @@ class AgentRequest:
 async def generate_agent_specification(request_data: dict) -> AgentSpecification:
     """Generate specialized agent specification based on team needs using AIQToolkit"""
     try:
+        # If mock responses are enabled or aiqtoolkit is not available, use fallback
+        if USE_MOCK_RESPONSES:
+            logger.info("Using fallback agent (mock mode enabled)")
+            return generate_fallback_agent(request_data)
+            
         # Extract and validate request data
         team_id = request_data.get("team_id")
         strategy = request_data.get("strategy")
@@ -41,25 +54,10 @@ async def generate_agent_specification(request_data: dict) -> AgentSpecification
             "current_agents": current_agents
         }
         
-        # Load and run workflow
-        workflow_path = os.path.join(os.path.dirname(__file__), 
-                                   "../workflows/agent_creation.yaml")
-        workflow = aiq.workflows.get_workflow(workflow_path)
-        result = workflow.run(input=workflow_input)
-        
-        # Parse result and return AgentSpecification
-        agent_data = json.loads(result.agent)
-        
-        # Validate that the sum of attributes doesn't exceed 3.0
-        attributes = agent_data.get("attributes", {})
-        attr_sum = sum(attributes.values())
-        if attr_sum > 3.0:
-            # Scale down attributes if they exceed the limit
-            scale_factor = 3.0 / attr_sum
-            for key in attributes:
-                attributes[key] = round(attributes[key] * scale_factor, 2)
-        
-        return AgentSpecification(**agent_data)
+        # This code would load and run the AIQToolkit workflow, but we'll skip it
+        # and use the fallback agent instead
+        logger.warning("AIQToolkit not available, using fallback agent")
+        return generate_fallback_agent(request_data)
     
     except Exception as e:
         logger.error(f"Error generating agent specification: {e}")
